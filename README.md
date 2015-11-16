@@ -6,21 +6,21 @@ not ready yet!
 usage: 
 
 
-#include "XmlWriter.h"
+	#include "XmlWriter.h"
 
-struct HelloWorld
-{
-    std::string message;
-    
-    void persist( Archive* archive )
-    {
-        archive->value( "message", message );
-    }
-};
+	struct HelloWorld
+	{
+		std::string message;
+		
+		void persist( Archive* archive )
+		{
+			archive->value( "message", message );
+		}
+	};
 
 
-HelloWorld hello_world;
-hello_world.message = "Hello World!";
+	HelloWorld hello_world;
+	hello_world.message = "Hello World!";
 
-XmlWriter writer;
-writer.write( "persist_hello_world_example.xml", "hello_world", hello_world );
+	XmlWriter writer;
+	writer.write( "persist_hello_world_example.xml", "hello_world", hello_world );
