@@ -9,14 +9,21 @@ it compiles with Visual Studio 2015
 Features:
 
 Serialization of basic types including strings
+
 Serialization of enums automatically storing it as the underlying type
+
 Serialization of arbitrary objects
+
 serialization of arrays
+
 Multiple and possibly cyclical references to objects.
+
 Serialization of the STL containers including maps
+
 Backwards compatibility ( you can reorder the elements add & remove with no problem)
 
 Binary Archives ( coming soon)
+
 Polymorphism ( coming soon )
 
 Extensibility ( you can easy create your own text based serializer  (eg Json, Lua)
