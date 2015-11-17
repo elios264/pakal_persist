@@ -75,21 +75,27 @@ void TextReader::end_object_as_value(const void* address)
 	m_context.pop();
 }
 
-void TextReader::end_object_as_reference(void*& address)
+void TextReader::end_object_as_reference()
 {
-	if (!get_current_element())
+	if (get_current_element() == &m_empty)
 	{
 		m_context.pop();
 		return;
 	}
 
-	void* oldAddress = get_current_element()->find_attribute("address")->address();
-
-	address = m_solved[oldAddress];
-
 	get_current_element()->remove_from_parent();
 	m_context.pop();
 }
+
+
+void TextReader::refer_object(const char* name, void*& value)
+{
+	void* oldAddress = get_current_element()->find_attribute(name)->address();
+
+	value = m_solved[oldAddress];
+}
+
+
 
 size_t TextReader::children_name_count(const char* name)
 {

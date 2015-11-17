@@ -51,10 +51,8 @@ void TextWriter::begin_object(const char* name)
 		m_context.push(get_current_element()->add_element(Element(name)));
 }
 
-void TextWriter::end_object_as_reference(void*& address)
+void TextWriter::end_object_as_reference()
 {
-	get_current_element()->address(address);
-	m_references.insert(address);
 	m_context.pop();
 }
 
@@ -84,7 +82,7 @@ void TextWriter::solve_references()
 		Element* e = m_stack.top();
 		m_stack.pop();
 
-		if (m_references.find(e->address()) != m_references.end())
+		if (e->address() && m_references.find(e->address()) != m_references.end())
 		{
 			e->add_attribute(Attribute("address", e->address()));
 		}
@@ -96,6 +94,13 @@ void TextWriter::solve_references()
 	}
 	m_references.clear();
 }
+
+void TextWriter::refer_object(const char* name, void*& value)
+{
+	get_current_element()->add_attribute(Attribute(name, value));
+	m_references.insert(value);
+}
+
 
 void TextWriter::value(const char* name, bool& value)
 {
