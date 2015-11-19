@@ -42,40 +42,34 @@
 
 #include <stack>
 #include <map>
+#include <fstream>
+#include <cassert>
 
 
 namespace Pakal
 {
 	class Element;
 
-	class  TextReader : public Archive
+	class TextReader : protected Archive
 	{
 		Element* m_root;
 		Element	 m_empty;
 		std::stack<Element*> m_context;
-
 		std::map<void*,void*> m_solved;
 
-	protected:
-		explicit TextReader();
-		virtual ~TextReader();
+
+		void push_root(Element* root);
+		void pop_root();
 
 		inline Element* get_current_element() { return m_context.top(); };
-		inline Element* get_root() { return m_root; };
 
-		void begin_object(const char* name) override;
+		void begin_object(const char* name, bool isContainer = false) override;
 		void end_object_as_value(const void* address) override;
 		void end_object_as_reference() override;
 		void refer_object(const char* name, void*& value) override;
 
-
-		inline bool has_unsolved_references()
-		{
-			return !m_solved.empty();
-		}
-
 		size_t children_name_count(const char* name) override;
-	public:
+
 		void value(const char* name, bool& value) override;
 		void value(const char* name, char& value) override;
 		void value(const char* name, signed char& value) override;
@@ -90,5 +84,49 @@ namespace Pakal
 		void value(const char* name, double& value) override;
 		void value(const char* name, char* value, size_t max) override;
 		void value(const char* name, std::string& value) override;
+
+	protected:
+
+		explicit TextReader();
+		virtual ~TextReader();
+
+		virtual void parse_element(std::istream& stream, Element* root) = 0;
+
+	public:
+
+		template <class Type> void read(const char* fileName, const char* name, Type& object)
+		{
+			std::ifstream stream(fileName);
+
+			read(stream, name, object);
+		}
+
+		template <class Type> void read(std::istream& stream, const char* name, Type& object)
+		{
+			assert(*name);
+
+			//read the tree
+			Element firstPass, secondPass;
+			parse_element(stream, &firstPass);
+			secondPass = firstPass;
+
+			//resolve the value objects
+			push_root(&firstPass);
+				set_type(ArchiveType::Reader);
+				Archive::value<Type>(name, object);
+			pop_root();
+
+			//resolve the reference objects
+			if (!m_solved.empty())
+			{
+				push_root(&secondPass);
+					set_type(ArchiveType::Resolver);
+					Archive::value<Type>(name, object);
+				pop_root();
+
+				m_solved.clear();
+			}
+		}
+
 	};
 }

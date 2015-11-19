@@ -35,15 +35,17 @@
 
 #include "XmlReader.h"
 #include "pugixml/pugixml.hpp"
-#include "Element.h"
+#include <cassert>
 
 using namespace Pakal;
 using namespace pugi;
 
-void XmlReader::parse(std::istream& stream, Element* root)
+void XmlReader::parse_element(std::istream& stream, Element* root)
 {
 	xml_document doc;
 	xml_parse_result result = doc.load(stream);
+
+	assert(("error reading the xml",result.status == status_ok));
 
 	parse_element(&doc, root);	
 }
@@ -57,7 +59,7 @@ void XmlReader::parse_element(xml_node* node, Element* element)
 
 	for (xml_node& child : node->children())
 	{
-		parse_element(&child, element->add_element(Element(child.name())));
+		parse_element(&child, element->add_element(Element(child.name(),false)));
 	}
 
 }

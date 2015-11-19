@@ -35,20 +35,30 @@
 
 #include "TextWriter.h"
 #include "Element.h"
+#include <cassert>
 
 using namespace Pakal;
 
 
-TextWriter::~TextWriter() 
+TextWriter::~TextWriter() {}
+
+void TextWriter::push_root(Element* root)
 {
-	delete m_root;
+	m_root = root;
+	m_context.push(root); 
 }
 
-void TextWriter::begin_object(const char* name)
+void TextWriter::pop_root()
 {
-	m_root == nullptr ?
-		m_context.push(m_root = new Element(name)) :
-		m_context.push(get_current_element()->add_element(Element(name)));
+	assert(m_context.top() == m_root && m_context.size() == 1);
+
+	m_root = nullptr;
+	m_context.pop(); 
+}
+
+void TextWriter::begin_object(const char* name, bool isContainer)
+{
+	m_context.push(get_current_element()->add_element(Element(name,isContainer)));
 }
 
 void TextWriter::end_object_as_reference()
@@ -75,7 +85,7 @@ void TextWriter::solve_references()
 	}
 
 	std::stack<Element*> m_stack;
-	m_stack.push(get_root());
+	m_stack.push(m_root);
 
 	while (!m_stack.empty())
 	{

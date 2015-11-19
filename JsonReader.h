@@ -32,43 +32,26 @@
 * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 * OTHER DEALINGS IN THE SOFTWARE.
 */
+#pragma once
 
-#include "XmlWriter.h"
-#include "pugixml//pugixml.hpp"
-#include <cassert>
+#include "TextReader.h"
 
-using namespace Pakal;
-using namespace pugi;
+#include <unordered_map>
 
-void XmlWriter::write_element(std::ostream& ostream, Element* root)
+namespace picojson
 {
-	assert(root->elements().size() == 1);
+	class value;
 
-	Element* data = &root->elements().front();
-
-
-	xml_document doc;
-	xml_node node = doc.append_child(node_element);
-	node.set_name(data->name().c_str());
-
-	write_element(&node, data);
-
-	doc.save(ostream);
+	typedef std::unordered_map<std::string, value> object;
+	typedef std::vector<value> array;
 }
 
-void XmlWriter::write_element(xml_node* node, Element* element)
+namespace Pakal
 {
-	for (Attribute& attr : element->attributes())
+	class JsonReader : public TextReader
 	{
-		node->append_attribute(attr.name().c_str()).set_value(attr.string().c_str());
-	}
-
-	for (Element& child : element->elements())
-	{
-		xml_node childNode = node->append_child(node_element);
-		childNode.set_name(child.name().c_str());
-
-		write_element(&childNode, &child);
-	}
-
+		void parse_element(std::istream& stream, Element* root) override;
+		void parse_element(picojson::object& object, Element* element);
+		void parse_element(picojson::array& array, Element* element);
+	};
 }

@@ -100,7 +100,7 @@ namespace Pakal
 		void container_value(const T& object);
 
 	protected:
-		virtual void begin_object(const char* name) = 0;
+		virtual void begin_object(const char* name,bool isContainer = false) = 0;
 		virtual void end_object_as_reference() = 0;
 		virtual void end_object_as_value(const void* address) = 0;
 
@@ -218,8 +218,8 @@ namespace Pakal
 	template<template<typename...> class stl_container, typename T, typename... etc, std::enable_if_t<!trait_utils::iterates_with_pair<stl_container<T, etc...>>::value>*>
 	void Archive::value(const char* name, const char* childName, stl_container<T, etc...>& container)
 	{
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		switch (m_type)
 		{
@@ -250,7 +250,7 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 
@@ -259,8 +259,8 @@ namespace Pakal
 	{
 		static_assert(!std::is_pointer<Key>::value, "pointers are not currently supported as key on a map");
 
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		switch (m_type)
 		{
@@ -308,15 +308,15 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 
 	template<class T, size_t Length>
 	void Archive::value(const char* name, const char* childName, T(& container)[Length])
 	{
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		size_t count = Length;
 
@@ -332,7 +332,7 @@ namespace Pakal
 			end_object_as_value(&container[i]);
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 
@@ -350,8 +350,8 @@ namespace Pakal
 	template<template <typename ...> class stl_container, typename T, typename ... etc, std::enable_if_t<!trait_utils::iterates_with_pair<stl_container<T*, etc...>>::value>*>
 	void Archive::value(const char* name, const char* childName, stl_container<T*, etc...>& container)
 	{
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		switch (m_type)
 		{
@@ -383,7 +383,7 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 
@@ -392,8 +392,8 @@ namespace Pakal
 	{
 		static_assert(!std::is_pointer<Key>::value, "pointers are not currently supported as key on a map");
 
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		switch (m_type)
 		{
@@ -441,15 +441,15 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 
 	template<class T, size_t Length>
 	void Archive::value(const char* name, const char* childName, T*(&container)[Length])
 	{
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		size_t count = Length;
 
@@ -485,7 +485,7 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 
@@ -498,8 +498,8 @@ namespace Pakal
 	template<template <typename ...> class stl_container, typename T, typename ... etc, std::enable_if_t<!trait_utils::iterates_with_pair<stl_container<T*, etc...>>::value>*>
 	void Archive::refer(const char* name, const char* childName, stl_container<T*, etc...>& container)
 	{
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		switch (m_type)
 		{
@@ -534,7 +534,7 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 
 	}
@@ -544,8 +544,8 @@ namespace Pakal
 	{
 		static_assert(!std::is_pointer<Key>::value, "pointers are not currently supported as key on a map");
 
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		switch (m_type)
 		{
@@ -589,15 +589,15 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 
 	template<class T, size_t Length>
 	void Archive::refer(const char* name, const char* childName, T*(& container)[Length])
 	{
-		if (*name != 0)
-			begin_object(name);
+		if (*name)
+			begin_object(name,true);
 
 		size_t count = m_type == ArchiveType::Resolver 
 			? (children_name_count(childName) > Length ? Length : children_name_count(childName)) 
@@ -620,7 +620,7 @@ namespace Pakal
 			break;
 		}
 
-		if (*name != 0)
+		if (*name)
 			end_object_as_value(&container);
 	}
 

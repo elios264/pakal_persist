@@ -36,7 +36,6 @@
 #pragma once
 
 #include "TextWriter.h"
-#include <fstream>
 
 namespace pugi
 {
@@ -46,26 +45,9 @@ namespace pugi
 
 namespace Pakal
 {
-	class  XmlWriter : private TextWriter
+	class XmlWriter : public TextWriter
 	{
-		void write_element(std::ostream& ostream, Element* element);
+		void write_element(std::ostream& ostream, Element* root) override;
 		void write_element(pugi::xml_node* node, Element* element);
-
-
-	public:
-		template <class Type> void write(const char* fileName, const char* name, Type& object)
-		{
-			std::ofstream stream(fileName);
-			
-			write(stream, name, object);
-		}
-
-		template <class Type> void write(std::ostream& stream, const char* name, Type& object)
-		{
-			Archive::value<Type>(name, object);
-			solve_references();
-			write_element(stream, get_root());
-		}
-
 	};
 }

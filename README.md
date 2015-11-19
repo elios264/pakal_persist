@@ -1,9 +1,9 @@
 # pakal persist
 C++ serialization library
 
-Overview
+#Overview
 
-Pakal Persist is  a C++ library that serializes data to and from streams in XML format ( for the moment)
+Pakal Persist is  a C++ library that serializes data to and from streams in XML/Json formats
 it compiles with Visual Studio 2015
 
 Features:
@@ -26,7 +26,7 @@ Binary Archives ( coming soon)
 
 Polymorphism ( coming soon )
 
-Extensibility ( you can easy create your own text based serializer  (eg Json, Lua)
+Extensibility ( you can easy create your own text based serializer
 
 
 #Usage:

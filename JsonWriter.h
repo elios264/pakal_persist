@@ -33,42 +33,31 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "XmlWriter.h"
-#include "pugixml//pugixml.hpp"
-#include <cassert>
+#pragma once
 
-using namespace Pakal;
-using namespace pugi;
+#include "TextWriter.h"
+#include <unordered_map>
 
-void XmlWriter::write_element(std::ostream& ostream, Element* root)
+namespace picojson
 {
-	assert(root->elements().size() == 1);
+	class value;
 
-	Element* data = &root->elements().front();
-
-
-	xml_document doc;
-	xml_node node = doc.append_child(node_element);
-	node.set_name(data->name().c_str());
-
-	write_element(&node, data);
-
-	doc.save(ostream);
+	typedef std::unordered_map<std::string, value> object;
+	typedef std::vector<value> array;
 }
 
-void XmlWriter::write_element(xml_node* node, Element* element)
+namespace Pakal
 {
-	for (Attribute& attr : element->attributes())
+	class JsonWriter : public TextWriter
 	{
-		node->append_attribute(attr.name().c_str()).set_value(attr.string().c_str());
-	}
+		void write_element(std::ostream& ostream, Element* root) override;
+		void write_element(picojson::object& object, Element* element);
+		void write_element(picojson::array& array, Element* element);
 
-	for (Element& child : element->elements())
-	{
-		xml_node childNode = node->append_child(node_element);
-		childNode.set_name(child.name().c_str());
+		bool m_pretty;
 
-		write_element(&childNode, &child);
-	}
+	public:
 
+		explicit JsonWriter(bool prettyJson = true) : m_pretty(prettyJson) {}
+	};
 }

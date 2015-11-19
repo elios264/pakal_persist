@@ -38,13 +38,12 @@
 using namespace Pakal;
 
 
-Element::Element(const std::string& name)
+Element::Element(const std::string& name,bool isContainer)
 	: 
 	m_address(nullptr),
 	m_parent(nullptr),
-	m_name(name),
-	m_attributes(),
-	m_elements()
+	m_is_container(isContainer),
+	m_name(name)
 {
 }
 

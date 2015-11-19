@@ -33,42 +33,51 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "XmlWriter.h"
-#include "pugixml//pugixml.hpp"
+#include "JsonReader.h"
+#include "picojson/picojson.h"
+
 #include <cassert>
 
 using namespace Pakal;
-using namespace pugi;
+using namespace picojson;
 
-void XmlWriter::write_element(std::ostream& ostream, Element* root)
+
+void JsonReader::parse_element(std::istream& stream, Element* element)
 {
-	assert(root->elements().size() == 1);
+	picojson::value rootValue;
+	std::string&& error = picojson::parse(rootValue, stream);
 
-	Element* data = &root->elements().front();
-
-
-	xml_document doc;
-	xml_node node = doc.append_child(node_element);
-	node.set_name(data->name().c_str());
-
-	write_element(&node, data);
-
-	doc.save(ostream);
+	assert(("error reading the json",error.empty()));
+	
+	parse_element(rootValue.get<object>(), element);
 }
 
-void XmlWriter::write_element(xml_node* node, Element* element)
+void JsonReader::parse_element(object& object, Element* element)
 {
-	for (Attribute& attr : element->attributes())
+	for(auto& pair : object)
 	{
-		node->append_attribute(attr.name().c_str()).set_value(attr.string().c_str());
+		if (pair.second.is<picojson::object>())
+		{
+			parse_element(pair.second.get<picojson::object>(), element->add_element(Element(pair.first,false)));
+		}
+		else if (pair.second.is<array>())
+		{
+			array& children = pair.second.get<array>();
+			parse_element(children, element->add_element(Element(pair.first,true)));
+		}
+		else
+		{
+			element->add_attribute(Attribute(pair.first,pair.second.to_str()));
+		}
 	}
+}
 
-	for (Element& child : element->elements())
+void JsonReader::parse_element(array& array, Element* element)
+{
+	for(picojson::value& child : array)
 	{
-		xml_node childNode = node->append_child(node_element);
-		childNode.set_name(child.name().c_str());
+		object& object = child.get<picojson::object>();
 
-		write_element(&childNode, &child);
+		parse_element(object,element->add_element(Element()));
 	}
-
 }

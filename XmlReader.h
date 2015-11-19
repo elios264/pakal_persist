@@ -35,8 +35,6 @@
 #pragma once
 
 #include "TextReader.h"
-#include "Element.h"
-#include <fstream>
 
 namespace pugi
 {
@@ -45,40 +43,9 @@ namespace pugi
 
 namespace Pakal
 {
-	class  XmlReader : private TextReader
+	class  XmlReader : public TextReader
 	{
-		void parse(std::istream& stream, Element* root);
+		void parse_element(std::istream& stream, Element* root) override;
 		void parse_element(pugi::xml_node* node, Element* element);
-
-	public:
-
-		template <class Type> void read(const char* fileName,const char* name,Type& object)
-		{			
-			std::ifstream stream(fileName);
-
-			read(stream, name, object);
-		}
-
-		template <class Type> void read(std::istream& stream, const char* name,Type& object)
-		{
-			//get values
-			set_type(ArchiveType::Reader);
-			parse(stream, get_root());
-			Archive::value<Type>(name, object);
-
-			if (has_unsolved_references())
-			{
-				//reset the stream
-				stream.clear();
-				stream.seekg(0);
-
-				//solve the references
-				set_type(ArchiveType::Resolver);
-				parse(stream, get_root());
-				Archive::value<Type>(name, object);
-			}
-
-		}
-
 	};
 }

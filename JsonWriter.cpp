@@ -33,42 +33,85 @@
 * OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "XmlWriter.h"
-#include "pugixml//pugixml.hpp"
+#include "JsonWriter.h"
+#include "picojson/picojson.h"
 #include <cassert>
 
-using namespace Pakal;
-using namespace pugi;
 
-void XmlWriter::write_element(std::ostream& ostream, Element* root)
+using namespace Pakal;
+using namespace picojson;
+
+void JsonWriter::write_element(std::ostream& ostream, Element* root)
 {
 	assert(root->elements().size() == 1);
 
 	Element* data = &root->elements().front();
 
+	object document;
 
-	xml_document doc;
-	xml_node node = doc.append_child(node_element);
-	node.set_name(data->name().c_str());
+	if (data->is_container())
+	{
+		array array;
+		write_element(array, data);
 
-	write_element(&node, data);
+		document[data->name()] = picojson::value(array);
+	}
+	else
+	{
+		object child;
+		write_element(child, data);
+		document[data->name()] = picojson::value(child);
+	}
 
-	doc.save(ostream);
+	std::string&& value = picojson::value(document).serialize(m_pretty);
+	ostream.write(value.c_str(),value.size());
 }
 
-void XmlWriter::write_element(xml_node* node, Element* element)
+void JsonWriter::write_element(object& object, Element* element)
 {
 	for (Attribute& attr : element->attributes())
 	{
-		node->append_attribute(attr.name().c_str()).set_value(attr.string().c_str());
+		object[attr.name()] = picojson::value(attr.string());
 	}
 
 	for (Element& child : element->elements())
 	{
-		xml_node childNode = node->append_child(node_element);
-		childNode.set_name(child.name().c_str());
+		if (child.is_container())
+		{
+			array childNode;
+			write_element(childNode, &child);
 
-		write_element(&childNode, &child);
+			auto inserted = object.insert(make_pair(child.name(), picojson::value(childNode))).second;
+			assert(("Anonymus containers (empty string) are not allowed when serializing with json eg. archive->value('', 'animation', animations) ", inserted));
+		}
+		else
+		{
+			picojson::object childNode;
+			write_element(childNode, &child);
+
+			auto inserted = object.insert(make_pair(child.name(), picojson::value(childNode))).second;
+			assert(("Anonymus containers (empty string) are not allowed when serializing with json eg. archive->value('', 'animation', animations) ", inserted));
+		}
 	}
+}
 
+void JsonWriter::write_element(array& array, Element* element)
+{
+	array.reserve(element->elements().size());
+
+	for (Element& child : element->elements())
+	{
+		if (child.is_container())
+		{
+			picojson::array childNode;
+			write_element(childNode, &child);
+			array.emplace_back(picojson::value(childNode));
+		}
+		else
+		{
+			object childNode;
+			write_element(childNode, &child);
+			array.emplace_back(picojson::value(childNode));
+		}
+	}
 }

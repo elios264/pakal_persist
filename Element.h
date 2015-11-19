@@ -42,23 +42,57 @@
 
 namespace Pakal
 {
-	class  Element
+	class Element
 	{
 		void* m_address;
 		Element* m_parent;
+		bool m_is_container;
 		
 		std::string m_name;
 		std::list<Attribute> m_attributes;
 		std::list<Element> m_elements;
 
 	public:
-		Element() : m_address(nullptr), m_parent(nullptr) { }
-		Element(const std::string& name);
+		Element() : m_address(nullptr), m_parent(nullptr), m_is_container(false) { }
+		Element(const std::string& name,bool isContainer);
+
+		Element(const Element& other)
+			: m_address { other.m_address },
+			  m_parent { other.m_parent },
+			  m_is_container { other.m_is_container },
+			  m_name { other.m_name },
+			  m_attributes { other.m_attributes },
+			  m_elements { other.m_elements }
+		{
+			for (auto& e : m_elements)
+			{
+				e.m_parent = this;
+			}
+		}
+		Element& operator=(const Element& other)
+		{
+			if (this == &other)
+				return *this;
+
+			m_address = other.m_address;
+			m_parent = other.m_parent;
+			m_is_container = other.m_is_container;
+			m_name = other.m_name;
+			m_attributes = other.m_attributes;
+			m_elements = other.m_elements;
+
+			for (auto& e : m_elements)
+			{
+				e.m_parent = this;
+			}
+			return *this;
+		}
 
 		const void* address() const;
 		void address(void* addr);
 
 		const std::string& name() const;
+		inline bool is_container() { return m_is_container;  }
 
 		std::list<Attribute>& attributes();
 		const std::list<Attribute>& attributes() const;

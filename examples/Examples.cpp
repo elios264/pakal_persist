@@ -4,6 +4,8 @@
 #include <vector>
 #include "../XmlReader.h"
 #include "../XmlWriter.h"
+#include "../JsonWriter.h"
+#include "../JsonReader.h"
 
 using namespace Pakal;
 
@@ -139,6 +141,7 @@ public:
 		archive->value("looped", looped);
 		archive->value("duration", duration);
 
+		//archive->value("", "frame", m_frames);
 		/*set the first parameter to empty string if you dont want the children to be nested in a inner tag eg: 
 			
 		<SpriteAnimation>
@@ -147,8 +150,8 @@ public:
 			<frame x="23" y="48" />
 		</SpriteAnimation>
 		*/
-		archive->value("", "frame", m_frames);
 
+		archive->value("Frames", "frame", m_frames);
 		/*
 		otherwise eg:
 		<SpriteAnimation>
@@ -160,7 +163,6 @@ public:
 		</SpriteAnimation>
 
 		*/
-		//archive->value("Frames", "frame", m_frames);
 
 	}
 
@@ -183,7 +185,7 @@ struct SpriteLoader
 		archive->value("size_factor", size_factor);
 		archive->value("texture", texture_name);
 		archive->value("default", default_animation);
-		archive->value("", "animation", animations);
+		archive->value("Animations", "animation", animations);
 	}
 };
 
@@ -193,7 +195,7 @@ struct SpriteLoader2
 
 	void persist(Archive* archive)
 	{
-		archive->value("Animations", "animation", animations);
+		archive->value("", "animation", animations);
 	}
 };
 
@@ -224,20 +226,41 @@ void persist_cyclic_references_example()
 	xml_writer.write("cyclic_references_example.xml", "people", people);
 
 	people.clear();
+
 	XmlReader xml_reader;
 	xml_reader.read("cyclic_references_example.xml", "people", people);
+
+	JsonWriter json_writer;
+	json_writer.write("cyclic_references_example.json", "people", people);
+
+	people.clear();
+
+	JsonReader json_reader;
+	json_reader.read("cyclic_references_example.json", "people", people);
+	
 }
 
 void persist_hello_world_example()
 {
 	HelloWorld hello_world;
 	hello_world.message = "Hello World!";
+
 	XmlWriter xml_writer;
 	xml_writer.write("hello_world_example.xml", "hello_world", hello_world);
 
 	hello_world.message.clear();
+
 	XmlReader xml_reader;
 	xml_reader.read("hello_world_example.xml", "hello_world", hello_world);
+
+	JsonWriter json_writer;
+	json_writer.write("hello_world_example.json", "hello_world", hello_world);
+
+	hello_world.message.clear();
+
+	JsonReader json_reader;
+	json_reader.read("hello_world_example.json", "hello_world", hello_world);
+
 }
 
 void persist_nested_example()
@@ -267,14 +290,22 @@ void persist_nested_example()
 	loader.animations.push_back(&animStanding);
 	loader.animations.push_back(&animBlock);
 
-	XmlWriter writer;
-	writer.write("nested_example.xml", "SpriteSheetAnimation", loader);
+	JsonWriter writer;
+	writer.write("nested_example.json", "SpriteSheetAnimation", loader);
 
 	SpriteLoader loader2;
 
-	XmlReader reader;
-	reader.read("nested_example.xml", "SpriteSheetAnimation", loader2);
+	JsonReader reader;
+	reader.read("nested_example.json", "SpriteSheetAnimation", loader2);
 
+	XmlWriter xml_writer;
+
+	xml_writer.write("nested_example.xml", "SpriteSheetAnimation", loader);
+	
+	SpriteLoader loader3;
+
+	XmlReader xml_reader;
+	reader.read("nested_example.json", "SpriteSheetAnimation", loader3);
 
 }
 
@@ -303,7 +334,6 @@ void persist_map_example()
 
 	XmlReader reader;
 	reader.read("map_example.xml", "SpriteSheetAnimation", loader2);
-
 
 }
 

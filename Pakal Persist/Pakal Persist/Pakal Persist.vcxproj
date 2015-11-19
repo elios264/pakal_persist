@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\JsonReader.h" />
+    <ClInclude Include="..\..\JsonWriter.h" />
+    <ClInclude Include="..\..\picojson\picojson.h" />
     <ClInclude Include="..\..\Archive.h" />
     <ClInclude Include="..\..\Attribute.h" />
     <ClInclude Include="..\..\Element.h" />
@@ -31,6 +34,8 @@
     <ClInclude Include="..\..\XmlWriter.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\JsonReader.cpp" />
+    <ClCompile Include="..\..\JsonWriter.cpp" />
     <ClCompile Include="..\..\Attribute.cpp" />
     <ClCompile Include="..\..\Element.cpp" />
     <ClCompile Include="..\..\pugixml\pugixml.cpp" />
