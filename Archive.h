@@ -38,11 +38,14 @@
 #include <string>
 #include <type_traits>
 #include "Utils.h"
+#include <map>
+#include <vector>
 #include <iterator>
 
 
 #if  !defined(_MSC_VER) || _MSC_VER < 1900
 #if __cplusplus <= 201103L
+
 namespace std
 {
 	template<bool _Test,
@@ -53,7 +56,7 @@ namespace std
 #endif
 
 /*
-json format, polymorphism
+ polymorphism
 */
 
 
@@ -69,6 +72,8 @@ namespace Pakal
 	class  Archive
 	{
 		ArchiveType m_type;
+		std::map<void*, std::vector<const void*>> m_insertion_order;
+
 
 		Archive(const Archive& other) = delete;
 		Archive& operator=(const Archive& other) = delete;
@@ -109,6 +114,7 @@ namespace Pakal
 		virtual size_t children_name_count(const char* name) = 0;
 
 		inline void set_type(ArchiveType type) { m_type = type; }
+		inline void clear_read_cache() { m_insertion_order.clear(); }
 
 		explicit Archive(ArchiveType type) : m_type(type) { }
 		virtual ~Archive() {}
@@ -228,17 +234,39 @@ namespace Pakal
 				size_t count = children_name_count(childName);
 				try_reserve(container, count);
 
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+				orderList.reserve(count);
+
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
 						T&& value = T();
 						container_value(value);
-					end_object_as_value(&*container.insert(container.end(), value));
+						
+						const void* finalAddress = &*container.insert(container.end(), value);
+						orderList.push_back(finalAddress);
+					end_object_as_value(finalAddress);
 				}
 			}
 			break;
-			case ArchiveType::Writer:
 			case ArchiveType::Resolver:
+			{
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+
+				for(const void* elementAddr : orderList)
+				{
+					const T* element = static_cast<const T*>(elementAddr);
+
+					begin_object(childName);
+						container_value(*element);
+					end_object_as_value(element);
+				}
+
+				m_insertion_order.erase(&container);
+
+			}
+			break;
+			case ArchiveType::Writer:
 			{
 				for (const T& element : container)
 				{
@@ -268,6 +296,9 @@ namespace Pakal
 			{		
 				size_t count = children_name_count(childName);
 
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+				orderList.reserve(count);
+
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
@@ -277,6 +308,7 @@ namespace Pakal
 							container_value(key);
 
 							auto& addresses = *container.insert(std::make_pair(key, Value())).first;
+							orderList.push_back(&addresses);
 						end_object_as_value(&addresses.first);
 
 						begin_object("value");
@@ -287,8 +319,32 @@ namespace Pakal
 				}
 			}
 			break;
-			case ArchiveType::Writer:
 			case ArchiveType::Resolver:
+			{
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+
+				for (const void* elementAddr : orderList)
+				{
+					const auto* element = static_cast<const typename stl_container<Key, Value, etc...>::value_type*>(elementAddr);
+
+					begin_object(childName);
+					{
+						begin_object("key");
+							container_value(element->first);
+						end_object_as_value(&element->first);
+
+						begin_object("value");
+							container_value(element->second);
+						end_object_as_value(&element->second);
+					}
+					end_object_as_value(&element);
+
+				}
+				m_insertion_order.erase(&container);
+
+			}
+			break;
+			case ArchiveType::Writer:
 			{
 				for (auto& element : container)
 				{
@@ -360,18 +416,37 @@ namespace Pakal
 				size_t count = children_name_count(childName);
 				try_reserve(container, count);
 
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+				orderList.reserve(count);
+
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
 						T* object = new T();
 						container_value(*object);
+						orderList.push_back(object);
 						container.insert(container.end(), object);
 					end_object_as_value(object);
 				}
 			}
 			break;
-			case ArchiveType::Writer:
 			case ArchiveType::Resolver:
+			{
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+
+				for (const void* elementAddr : orderList)
+				{
+					const T* element = static_cast<const T*>(elementAddr);
+
+					begin_object(childName);
+						container_value(*element);
+					end_object_as_value(element);
+				}
+
+				m_insertion_order.erase(&container);
+			}
+			break;
+			case ArchiveType::Writer:
 			{
 				for (const T* element : container)
 				{
@@ -401,6 +476,9 @@ namespace Pakal
 			{
 				size_t count = children_name_count(childName);
 
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+				orderList.reserve(count);
+
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
@@ -410,6 +488,7 @@ namespace Pakal
 							container_value(key);
 
 							auto& addresses = *container.insert(std::make_pair(key,new Value())).first;
+							orderList.push_back(&addresses);
 						end_object_as_value(&addresses.first);
 
 						begin_object("value");
@@ -420,8 +499,31 @@ namespace Pakal
 				}
 			}
 			break;
-			case ArchiveType::Writer:
 			case ArchiveType::Resolver:
+			{
+				std::vector<const void*>& orderList = m_insertion_order[&container];
+
+				for (const void* elementAddr : orderList)
+				{
+					const auto* element = static_cast<const typename stl_container<Key, Value, etc...>::value_type*>(elementAddr);
+
+					begin_object(childName);
+					{
+						begin_object("key");
+						container_value(element->first);
+						end_object_as_value(&element->first);
+
+						begin_object("value");
+						container_value(element->second);
+						end_object_as_value(&element->second);
+					}
+					end_object_as_value(&element);
+
+				}
+				m_insertion_order.erase(&container);
+			}
+			break;
+			case ArchiveType::Writer:
 			{
 				for (auto& element : container)
 				{
@@ -492,7 +594,10 @@ namespace Pakal
 	template<class T>
 	void Archive::refer(const char* name, T*& object)
 	{
-		refer_object(name, *reinterpret_cast<void**>(&object));
+		if (m_type == ArchiveType::Resolver)
+		{
+			refer_object(name, *reinterpret_cast<void**>(&object));
+		}
 	}
 
 	template<template <typename ...> class stl_container, typename T, typename ... etc, std::enable_if_t<!trait_utils::iterates_with_pair<stl_container<T*, etc...>>::value>*>

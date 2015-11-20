@@ -126,6 +126,8 @@ namespace Pakal
 
 				m_solved.clear();
 			}
+
+			clear_read_cache();
 		}
 
 	};
