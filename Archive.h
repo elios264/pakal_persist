@@ -510,11 +510,11 @@ namespace Pakal
 					begin_object(childName);
 					{
 						begin_object("key");
-						container_value(element->first);
+							container_value(element->first);
 						end_object_as_value(&element->first);
 
 						begin_object("value");
-						container_value(element->second);
+							container_value(element->second);
 						end_object_as_value(&element->second);
 					}
 					end_object_as_value(&element);
@@ -594,7 +594,7 @@ namespace Pakal
 	template<class T>
 	void Archive::refer(const char* name, T*& object)
 	{
-		if (m_type == ArchiveType::Resolver)
+		if (m_type == ArchiveType::Resolver || m_type == ArchiveType::Writer)
 		{
 			refer_object(name, *reinterpret_cast<void**>(&object));
 		}
