@@ -40,14 +40,17 @@
 using namespace Pakal;
 using namespace pugi;
 
-void XmlReader::parse_element(std::istream& stream, Element* root)
+bool XmlReader::parse_element(std::istream& stream, Element* root)
 {
 	xml_document doc;
 	xml_parse_result result = doc.load(stream);
 
-	assert(("error reading the xml",result.status == status_ok));
+	//assert(("error reading the xml",result.status == status_ok));
+	if (result.status != status_ok)
+		return false;
 
 	parse_element(&doc, root);	
+	return true;
 }
 
 void XmlReader::parse_element(xml_node* node, Element* element)

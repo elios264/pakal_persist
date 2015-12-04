@@ -90,24 +90,25 @@ namespace Pakal
 		explicit TextReader();
 		virtual ~TextReader();
 
-		virtual void parse_element(std::istream& stream, Element* root) = 0;
+		virtual bool parse_element(std::istream& stream, Element* root) = 0;
 
 	public:
 
-		template <class Type> void read(const char* fileName, const char* name, Type& object)
+		template <class Type> bool read(const char* fileName, const char* name, Type& object)
 		{
 			std::ifstream stream(fileName);
 
-			read(stream, name, object);
+			return read(stream, name, object);
 		}
 
-		template <class Type> void read(std::istream& stream, const char* name, Type& object)
+		template <class Type> bool read(std::istream& stream, const char* name, Type& object)
 		{
 			assert(*name);
 
 			//read the tree
 			Element firstPass, secondPass;
-			parse_element(stream, &firstPass);
+			if (parse_element(stream, &firstPass) == false)
+				return false;
 			secondPass = firstPass;
 
 			//resolve the value objects
@@ -128,6 +129,8 @@ namespace Pakal
 			}
 
 			clear_read_cache();
+
+			return true;
 		}
 
 	};
