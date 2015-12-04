@@ -35,6 +35,8 @@
 
 
 #pragma once
+#ifndef PAKAL_UTILS_H_
+#	define PAKAL_UTILS_H_
 
 #include <iostream>
 #include <string>
@@ -222,3 +224,4 @@ namespace Pakal
 
 }
 
+#endif
