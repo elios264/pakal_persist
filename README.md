@@ -8,28 +8,19 @@ it compiles with Visual Studio 2015
 
 Features:
 
-Serialization of basic types including strings
-
-Serialization of enums automatically storing it as the underlying type
-
-Serialization of arbitrary objects
-
-serialization of arrays
-
-Polymorphism 
-
-Multiple and possibly cyclical references to objects.
-
-Serialization of the STL containers including maps
-
-Backwards compatibility ( you can reorder the elements add & remove with no problem)
-
-Binary Archives ( coming soon)
-
-Extensibility ( you can easy create your own text based serializer )
+*Serialization of basic types including std::string
+*Serialization of enums automatically storing it as the underlying type
+*Serialization of arbitrary objects
+*Serialization of arrays
+*Polymorphism 
+*Multiple and possibly cyclical references to objects.
+*Serialization of the STL containers including maps
+*Backwards compatibility ( you can reorder the elements add & remove with no problem)
+*Extensibility ( you can easy create your own text based serializer )
+*Binary Archives ( coming soon)
 
 
-#Usage:
+#Usage
 
 
 Pakal Persist serializes arbitrary data to and from an iostream. Typically this is a file but can be a buffer in memory or any more complex combination supported by iostreams.
@@ -268,6 +259,42 @@ For example a contrived example with left and right object inheriting from a bas
 		}
 	};
 	
+	struct Polymorphism
+	{
+		std::vector<Object*> m_objects;
+
+		Polymorphism()
+			: m_objects()
+		{
+		}
+
+		~Polymorphism()
+		{
+			while (!m_objects.empty())
+			{
+				delete m_objects.back();
+				m_objects.pop_back();
+			}
+		}
+
+		void create()
+		{
+			m_objects.push_back(new Object("object_0"));
+			m_objects.push_back(new LeftObject("left_0", 0));
+			m_objects.push_back(new RightObject("right_0", 0.0f));
+			m_objects.push_back(new LeftObject("left_1", 1));
+			m_objects.push_back(new LeftObject("left_2", 2));
+			m_objects.push_back(new RightObject("right_1", 1.0f));
+			m_objects.push_back(new RightObject("right_2", 2.0f));
+			m_objects.push_back(new LeftObject("left_3", 3));
+		}
+
+		void persist(Archive* archive)
+		{
+			archive->value("objects", "object", m_objects);
+		}
+	};	
+		
 	void persist_polymorphism_example()
 	{
 		SimpleFactoyManager manager;
