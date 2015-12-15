@@ -565,7 +565,7 @@ namespace Pakal
 
 				for (const void* elementAddr : orderList)
 				{
-					const auto* element = static_cast<const typename stl_container<Key, Value, etc...>::value_type*>(elementAddr);
+					const auto* element = static_cast<const typename stl_container<Key, Value*, etc...>::value_type*>(elementAddr);
 
 					begin_object(childName);
 					{
@@ -575,7 +575,7 @@ namespace Pakal
 
 						begin_object("value");
 							container_value(element->second);
-						end_object_as_value(&element->second);
+						end_object_as_value(element->second);
 					}
 					end_object_as_value(&element);
 
