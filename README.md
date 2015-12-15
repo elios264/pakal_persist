@@ -8,16 +8,16 @@ it compiles with Visual Studio 2015
 
 Features:
 
-	*Serialization of basic types including std::string
-	*Serialization of enums automatically storing it as the underlying type
-	*Serialization of arbitrary objects
-	*Serialization of arrays
-	*Polymorphism 
-	*Multiple and possibly cyclical references to objects.
-	*Serialization of the STL containers including maps
-	*Backwards compatibility ( you can reorder the elements add & remove with no problem)
-	*Extensibility ( you can easy create your own text based serializer )
-	*Binary Archives ( coming soon)
+* Serialization of basic types including std::string
+* Serialization of enums automatically storing it as the underlying type
+* Serialization of arbitrary objects
+* Serialization of arrays
+* Polymorphism 
+* Multiple and possibly cyclical references to objects.
+* Serialization of the STL containers including maps
+* Backwards compatibility ( you can reorder the elements add & remove with no problem)
+* Extensibility ( you can easy create your own text based serializer )
+* Binary Archives ( coming soon)
 
 
 #Usage
