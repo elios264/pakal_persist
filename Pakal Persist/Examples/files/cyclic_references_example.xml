@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<people>
+	<item name="Alfred" address="0071A9A8">
+		<friends>
+			<friend address="0071A9D4" />
+			<friend address="0071AA00" />
+		</friends>
+	</item>
+	<item name="Ben" address="0071A9D4">
+		<friends>
+			<friend address="0071A9A8" />
+			<friend address="0071AA2C" />
+		</friends>
+	</item>
+	<item name="Camilla" address="0071AA00">
+		<friends>
+			<friend address="0071A9A8" />
+			<friend address="0071A9D4" />
+			<friend address="0071AA2C" />
+		</friends>
+	</item>
+	<item name="Denise" address="0071AA2C">
+		<friends>
+			<friend address="0071AA00" />
+		</friends>
+	</item>
+</people>

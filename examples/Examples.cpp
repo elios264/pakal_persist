@@ -9,6 +9,118 @@
 
 using namespace Pakal;
 
+struct Object
+{
+
+	std::string m_name;
+
+	Object()
+		: m_name()
+	{
+	}
+
+	Object(const std::string& name)
+		: m_name(name)
+	{
+	}
+
+	virtual ~Object()
+	{
+	}
+
+	virtual void persist(Archive* archive)
+	{
+		archive->set_type_name("Object");
+		archive->value("name", m_name);
+	}
+};
+
+struct LeftObject : Object
+{
+	int m_left_value;
+
+	LeftObject()
+		: Object(""),
+		m_left_value(0)
+	{
+	}
+
+	LeftObject(const std::string& name, int left_value)
+		: Object(name),
+		m_left_value(left_value)
+	{
+	}
+
+	virtual void persist(Archive* archive) override
+	{
+		Object::persist(archive);
+
+		archive->set_type_name("LeftObject");
+		archive->value("left_value", m_left_value);
+	}
+};
+
+struct RightObject : Object
+{
+	float m_right_value;
+
+	RightObject()
+		: Object(""),
+		m_right_value(0.0f)
+	{
+	}
+
+	RightObject(const std::string& name, float right_value)
+		: Object(name),
+		m_right_value(right_value)
+	{
+	}
+
+	virtual void persist(Archive* archive) override
+	{
+		Object::persist(archive);
+
+		archive->set_type_name("RightObject");
+		archive->value("right_value", m_right_value);
+	}
+};
+
+
+struct Polymorphism
+{
+	std::vector<Object*> m_objects;
+
+	Polymorphism()
+		: m_objects()
+	{
+	}
+
+	~Polymorphism()
+	{
+		while (!m_objects.empty())
+		{
+			delete m_objects.back();
+			m_objects.pop_back();
+		}
+	}
+
+	void create()
+	{
+		m_objects.push_back(new Object("object_0"));
+		m_objects.push_back(new LeftObject("left_0", 0));
+		m_objects.push_back(new RightObject("right_0", 0.0f));
+		m_objects.push_back(new LeftObject("left_1", 1));
+		m_objects.push_back(new LeftObject("left_2", 2));
+		m_objects.push_back(new RightObject("right_1", 1.0f));
+		m_objects.push_back(new RightObject("right_2", 2.0f));
+		m_objects.push_back(new LeftObject("left_3", 3));
+	}
+
+	void persist(Archive* archive)
+	{
+		archive->value("objects", "object", m_objects);
+	}
+};
 
 struct Person
 {
@@ -223,20 +335,20 @@ void persist_cyclic_references_example()
 	denise.add_friend(&camilla);
 
 	XmlWriter xml_writer;
-	xml_writer.write("cyclic_references_example.xml", "people", people);
+	xml_writer.write("files/cyclic_references_example.xml", "people", people);
 
 	people.clear();
 
 	XmlReader xml_reader;
-	xml_reader.read("cyclic_references_example.xml", "people", people);
+	xml_reader.read("files/cyclic_references_example.xml", "people", people);
 
 	JsonWriter json_writer;
-	json_writer.write("cyclic_references_example.json", "people", people);
+	json_writer.write("files/cyclic_references_example.json", "people", people);
 
 	people.clear();
 
 	JsonReader json_reader;
-	json_reader.read("cyclic_references_example.json", "people", people);
+	json_reader.read("files/cyclic_references_example.json", "people", people);
 	
 }
 
@@ -246,20 +358,20 @@ void persist_hello_world_example()
 	hello_world.message = "Hello World!";
 
 	XmlWriter xml_writer;
-	xml_writer.write("hello_world_example.xml", "hello_world", hello_world);
+	xml_writer.write("files/hello_world_example.xml", "hello_world", hello_world);
 
 	hello_world.message.clear();
 
 	XmlReader xml_reader;
-	xml_reader.read("hello_world_example.xml", "hello_world", hello_world);
+	xml_reader.read("files/hello_world_example.xml", "hello_world", hello_world);
 
 	JsonWriter json_writer;
-	json_writer.write("hello_world_example.json", "hello_world", hello_world);
+	json_writer.write("files/hello_world_example.json", "hello_world", hello_world);
 
 	hello_world.message.clear();
 
 	JsonReader json_reader;
-	json_reader.read("hello_world_example.json", "hello_world", hello_world);
+	json_reader.read("files/hello_world_example.json", "hello_world", hello_world);
 
 }
 
@@ -291,21 +403,21 @@ void persist_nested_example()
 	loader.animations.push_back(&animBlock);
 
 	JsonWriter writer;
-	writer.write("nested_example.json", "SpriteSheetAnimation", loader);
+	writer.write("files/nested_example.json", "SpriteSheetAnimation", loader);
 
 	SpriteLoader loader2;
 
 	JsonReader reader;
-	reader.read("nested_example.json", "SpriteSheetAnimation", loader2);
+	reader.read("files/nested_example.json", "SpriteSheetAnimation", loader2);
 
 	XmlWriter xml_writer;
 
-	xml_writer.write("nested_example.xml", "SpriteSheetAnimation", loader);
+	xml_writer.write("files/nested_example.xml", "SpriteSheetAnimation", loader);
 	
 	SpriteLoader loader3;
 
 	XmlReader xml_reader;
-	reader.read("nested_example.json", "SpriteSheetAnimation", loader3);
+	reader.read("files/nested_example.json", "SpriteSheetAnimation", loader3);
 
 }
 
@@ -328,13 +440,41 @@ void persist_map_example()
 
 
 	XmlWriter writer;
-	writer.write("map_example.xml", "SpriteSheetAnimation", loader);
+	writer.write("files/map_example.xml", "SpriteSheetAnimation", loader);
 
 	SpriteLoader2 loader2;
 
 	XmlReader reader;
-	reader.read("map_example.xml", "SpriteSheetAnimation", loader2);
+	reader.read("files/map_example.xml", "SpriteSheetAnimation", loader2);
 
+}
+
+void persist_polymorphism_example()
+{
+	SimpleFactoyManager manager;
+
+	manager.declare_object<Object>("Object", []() { return new Object(); });
+	manager.declare_object<LeftObject>("LeftObject", []() { return new LeftObject(); });
+	manager.declare_object<RightObject>("RightObject", []() { return new RightObject(); });
+
+	Archive::ObjectFactory = &manager;
+
+	Polymorphism polymorphism;
+	polymorphism.create();
+
+	XmlWriter xml_writer;
+	JsonWriter json_writer;
+	
+	xml_writer.write("files/persist_polymorphism_example.xml", "polymorphism", polymorphism);
+	json_writer.write("files/persist_polymorphism_example.json", "polymorphism", polymorphism);
+
+	Polymorphism other_polymorphism;
+	Polymorphism other_polymorphism2;
+	XmlReader xml_reader;
+	JsonReader json_reader;
+	
+	xml_reader.read("files/persist_polymorphism_example.xml", "polymorphism", other_polymorphism);
+	json_reader.read("files/persist_polymorphism_example.json", "polymorphism", other_polymorphism2);
 }
 
 
@@ -344,6 +484,7 @@ int main()
 	persist_cyclic_references_example();
 	persist_nested_example();
 	persist_map_example();
+	persist_polymorphism_example();
     return 0;
 }
 

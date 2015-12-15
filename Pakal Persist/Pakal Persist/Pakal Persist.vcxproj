@@ -29,11 +29,12 @@
     <ClInclude Include="..\..\pugixml\pugixml.hpp" />
     <ClInclude Include="..\..\TextReader.h" />
     <ClInclude Include="..\..\TextWriter.h" />
-    <ClInclude Include="..\..\Utils.h" />
+    <ClInclude Include="..\..\PersistUtils.h" />
     <ClInclude Include="..\..\XmlReader.h" />
     <ClInclude Include="..\..\XmlWriter.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\Archive.cpp" />
     <ClCompile Include="..\..\JsonReader.cpp" />
     <ClCompile Include="..\..\JsonWriter.cpp" />
     <ClCompile Include="..\..\Attribute.cpp" />

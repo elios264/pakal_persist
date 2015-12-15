@@ -35,29 +35,13 @@
 
 
 #pragma once
+
 #include <string>
-#include <type_traits>
-#include "Utils.h"
+#include "PersistUtils.h"
 #include <map>
 #include <vector>
-#include <iterator>
-
-
-#if  !defined(_MSC_VER) || _MSC_VER < 1900
-#if __cplusplus <= 201103L
-
-namespace std
-{
-	template<bool _Test,
-	class _Ty = void>
-		using enable_if_t = typename enable_if<_Test, _Ty>::type;
-}
-#endif
-#endif
-
-/*
- polymorphism
-*/
+#include <cassert>
+#include <functional>
 
 
 namespace Pakal
@@ -69,26 +53,36 @@ namespace Pakal
 		Resolver,
 	};
 
+	class IFactoryManager
+	{
+	public:
+		virtual ~IFactoryManager() {}
+		virtual void* create_object(const std::string& className) = 0;
+	};
+
+	class SimpleFactoyManager : public IFactoryManager
+	{
+		std::map<std::string, std::function<void*()>> m_factories;
+
+	public:
+		void* create_object(const std::string& className) override;
+
+		template<class T>
+		void declare_object(const std::string& objectName, std::function<T*()> factory)
+		{
+			m_factories[objectName] = [factory]() { return static_cast<void*>(factory()); };
+		}
+	};
+
+
 	class  Archive
 	{
 		ArchiveType m_type;
 		std::map<void*, std::vector<const void*>> m_insertion_order;
-
+		bool m_is_pointer;
 
 		Archive(const Archive& other) = delete;
 		Archive& operator=(const Archive& other) = delete;
-		
-		template<typename T>
-		struct has_persist
-		{
-			template <class C>
-			static char(&f(typename std::enable_if<
-				std::is_same<void, decltype(std::declval<C>().persist(std::declval<Archive*>()))>::value, void>::type*))[1];
-
-			template<typename C> static char(&f(...))[2];
-
-			static constexpr bool value = sizeof(f<T>(nullptr)) == 1;
-		};
 
 		template< typename C, std::enable_if_t<!trait_utils::has_reserve<C>::value>* = nullptr >
 		void try_reserve(C&, std::size_t) {}
@@ -98,30 +92,67 @@ namespace Pakal
 			c.reserve(c.size() + n);
 		}
 
-		template<class T, std::enable_if_t<has_persist<T>::value>* = nullptr>
+		template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>* = nullptr>
 		void container_value(const T& object);
 
-		template<class T, std::enable_if_t<!has_persist<T>::value>* = nullptr >
+		template<class T, std::enable_if_t<!trait_utils::has_persist<T>::value>* = nullptr >
 		void container_value(const T& object);
+
+		template<class T>
+		T* create_polymorphic_object()
+		{
+			auto className = get_object_class_name();
+			auto newObject = *className && ObjectFactory ? ObjectFactory->create_object(className) : nullptr;
+
+			return newObject ? static_cast<T*>(newObject) : create_non_polymorphic_object<T>();
+		}
+
+		template<class T, std::enable_if_t<std::is_constructible<T>::value>* = nullptr >
+		T* create_non_polymorphic_object() { return new T(); }
+
+		template<class T, std::enable_if_t<!std::is_constructible<T>::value>* = nullptr >
+		T* create_non_polymorphic_object()
+		{
+			assert(("could not instanciate object for deserialization since is not constructible nor in the factory", false));
+			return nullptr;
+		}
 
 	protected:
+		static constexpr const char* address_kwd = "address";
+		static constexpr const char* class_kwd = "class";
+
+
 		virtual void begin_object(const char* name,bool isContainer = false) = 0;
 		virtual void end_object_as_reference() = 0;
 		virtual void end_object_as_value(const void* address) = 0;
 
 		virtual void refer_object(const char* name, void*& value) = 0;
 
-		virtual size_t children_name_count(const char* name) = 0;
+		virtual size_t		get_children_name_count(const char* name) = 0;
+		virtual void		set_object_class_name(const char* className) = 0;
+		virtual const char* get_object_class_name() = 0;
 
 		inline void set_type(ArchiveType type) { m_type = type; }
 		inline void clear_read_cache() { m_insertion_order.clear(); }
+		inline void assert_if_reserved(const char* name)
+		{
+			assert(("sorry keywords address and class are reserved for internal use", strcmp(address_kwd, name) != 0 && strcmp(class_kwd, name) != 0));
+		};
 
-		explicit Archive(ArchiveType type) : m_type(type) { }
+		explicit Archive(ArchiveType type) : m_type(type), m_is_pointer(false) {}
 		virtual ~Archive() {}
 
 	public:	
 
+		static IFactoryManager* ObjectFactory;
 		inline ArchiveType get_type() { return m_type;  }
+		virtual void set_type_name(const std::string& typeName)
+		{
+			if (m_type == ArchiveType::Writer && m_is_pointer)
+			{
+				set_object_class_name(typeName.c_str());
+			}
+		}
 
 		virtual void value(const char* name, bool& value) = 0;
 		virtual void value(const char* name, char& value) = 0;
@@ -138,8 +169,11 @@ namespace Pakal
 		virtual void value(const char* name, char* value, size_t max) = 0;
 		virtual void value(const char* name, std::string& value) = 0;
 
+		template<class T, std::enable_if_t<std::is_pointer<T>::value>* = nullptr>
+		void value(const char* name, T& object);
+
 		//for an object that has a member called persist
-		template<class T, std::enable_if_t<has_persist<T>::value>* = nullptr>
+		template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>* = nullptr>
 		void value(const char* name, T& object);
 
 		//for an enum, is treated as the underlying type 
@@ -147,7 +181,7 @@ namespace Pakal
 		void value(const char* name, T& object);
 
 		//for stl container or array with default childName to "item"
-		template<class T, std::enable_if_t<has_persist<T>::value == false && std::is_enum<T>::value == false>* = nullptr >
+		template<class T, std::enable_if_t<trait_utils::has_persist<T>::value == false && std::is_enum<T>::value == false && std::is_pointer<T>::value==false>* = nullptr >
 		void value(const char* name, T& object);
 
 		//for stl container that is not associative
@@ -164,7 +198,10 @@ namespace Pakal
 
 		//----------------Pointers as values--------------------------------------------
 
-		template<class T>
+		template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>* = nullptr>
+		void value(const char* name, T*& object);
+
+		template<class T, std::enable_if_t<!trait_utils::has_persist<T>::value>* = nullptr>
 		void value(const char* name, T*& object);
 
 		template <template<typename ...> class stl_container, typename T, typename...etc ,std::enable_if_t<!trait_utils::iterates_with_pair<stl_container<T*, etc...>>::value>* = nullptr>
@@ -175,7 +212,6 @@ namespace Pakal
 
 		template <class T, size_t Length>
 		void value(const char* name, const char* childName, T*(&container)[Length]);
-
 
 		//---------Pointers as references------------------------------
 
@@ -197,7 +233,15 @@ namespace Pakal
 
 	};
 
-	template<class T, std::enable_if_t<Archive::has_persist<T>::value>*>
+	template<class T, std::enable_if_t<std::is_pointer<T>::value>*>
+	void Archive::value(const char* name, T& object)
+	{
+		typename std::remove_pointer<T>::type* pointerObject = object;
+
+		value(name, pointerObject);
+	}
+
+	template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>*>
 	void Archive::value(const char* name, T& object)
 	{
 		begin_object(name);
@@ -213,7 +257,7 @@ namespace Pakal
 		Enum = static_cast<T>(n);
 	}
 
-	template<class T, std::enable_if_t<Archive::has_persist<T>::value == false && std::is_enum<T>::value == false>* >
+	template<class T, std::enable_if_t<trait_utils::has_persist<T>::value == false && std::is_enum<T>::value == false && std::is_pointer<T>::value == false>* >
 	void Archive::value(const char* name, T& object)
 	{
 		static_assert(trait_utils::is_container<T>::value || std::is_array<T>::value, "T/Key must have a persist method or to be a stl container or an array or a pointer or an enum or a basic type");
@@ -231,7 +275,7 @@ namespace Pakal
 		{
 			case ArchiveType::Reader:
 			{
-				size_t count = children_name_count(childName);
+				size_t count = get_children_name_count(childName);
 				try_reserve(container, count);
 
 				std::vector<const void*>& orderList = m_insertion_order[&container];
@@ -294,7 +338,7 @@ namespace Pakal
 		{
 			case ArchiveType::Reader:
 			{		
-				size_t count = children_name_count(childName);
+				size_t count = get_children_name_count(childName);
 
 				std::vector<const void*>& orderList = m_insertion_order[&container];
 				orderList.reserve(count);
@@ -378,7 +422,7 @@ namespace Pakal
 
 		if (m_type == ArchiveType::Reader || m_type == ArchiveType::Resolver)
 		{
-			count = children_name_count(childName) > Length ? Length : children_name_count(childName);
+			count = get_children_name_count(childName) > Length ? Length : get_children_name_count(childName);
 		}
 
 		for (size_t i = 0; i < count; i++)
@@ -392,15 +436,29 @@ namespace Pakal
 			end_object_as_value(&container);
 	}
 
-	template<class T>
+	template<class T, std::enable_if_t<!trait_utils::has_persist<T>::value>*>
 	void Archive::value(const char* name, T*& object)
 	{
-		if (this->m_type == ArchiveType::Reader)
+		if (m_type == ArchiveType::Reader)
 		{
-			object = new T();
+			object = create_non_polymorphic_object<T>();
 		}
 
 		value(name, *object);
+	}
+
+	template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>*>
+	void Archive::value(const char* name, T*& object)
+	{
+		begin_object(name);
+		if (m_type == ArchiveType::Reader)
+		{
+			object = create_polymorphic_object<T>();
+		}
+		m_is_pointer = true;
+		object->persist(this);
+		m_is_pointer = false;
+		end_object_as_value(object);
 	}
 
 	template<template <typename ...> class stl_container, typename T, typename ... etc, std::enable_if_t<!trait_utils::iterates_with_pair<stl_container<T*, etc...>>::value>*>
@@ -413,7 +471,7 @@ namespace Pakal
 		{
 			case ArchiveType::Reader:
 			{
-				size_t count = children_name_count(childName);
+				size_t count = get_children_name_count(childName);
 				try_reserve(container, count);
 
 				std::vector<const void*>& orderList = m_insertion_order[&container];
@@ -422,7 +480,7 @@ namespace Pakal
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
-						T* object = new T();
+						T* object = create_polymorphic_object<T>();
 						container_value(*object);
 						orderList.push_back(object);
 						container.insert(container.end(), object);
@@ -451,7 +509,9 @@ namespace Pakal
 				for (const T* element : container)
 				{
 					begin_object(childName);
+						m_is_pointer = true;
 						container_value(*element);
+						m_is_pointer = false;
 					end_object_as_value(element);
 				}
 			}
@@ -474,7 +534,7 @@ namespace Pakal
 		{
 			case ArchiveType::Reader:
 			{
-				size_t count = children_name_count(childName);
+				size_t count = get_children_name_count(childName);
 
 				std::vector<const void*>& orderList = m_insertion_order[&container];
 				orderList.reserve(count);
@@ -486,12 +546,12 @@ namespace Pakal
 						begin_object("key");
 							Key&& key = Key();
 							container_value(key);
-
-							auto& addresses = *container.insert(std::make_pair(key,new Value())).first;
+							auto& addresses = *container.insert(std::make_pair(key,nullptr)).first;
 							orderList.push_back(&addresses);
 						end_object_as_value(&addresses.first);
 
 						begin_object("value");
+							addresses.second = create_polymorphic_object<Value>();
 							container_value(*addresses.second);
 						end_object_as_value(addresses.second);
 					}
@@ -534,7 +594,9 @@ namespace Pakal
 						end_object_as_value(&element.first);
 
 						begin_object("value");
+							m_is_pointer = true;
 							container_value(*element.second);
+							m_is_pointer = false;
 						end_object_as_value(element.second);
 					}
 					end_object_as_value(&element);
@@ -557,7 +619,7 @@ namespace Pakal
 
 		if (m_type == ArchiveType::Reader || m_type == ArchiveType::Resolver)
 		{
-			count = children_name_count(childName) > Length ? Length : children_name_count(childName);
+			count = get_children_name_count(childName) > Length ? Length : get_children_name_count(childName);
 		}
 
 		switch (m_type)
@@ -567,7 +629,7 @@ namespace Pakal
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
-						T* object = new T();
+						T* object = create_polymorphic_object<T>();
 						container_value(*object);
 						container[i] = object;
 					end_object_as_value(object);
@@ -580,7 +642,9 @@ namespace Pakal
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
+						m_is_pointer = true;
 						container_value(*container[i]);
+						m_is_pointer = false;
 					end_object_as_value(container[i]);
 				}
 			}
@@ -610,14 +674,14 @@ namespace Pakal
 		{
 			case ArchiveType::Resolver: 
 			{	
-				size_t count = children_name_count(childName);
+				size_t count = get_children_name_count(childName);
 				try_reserve(container, count);
 
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
 						T* pointer = nullptr;
-						refer("address", pointer);
+						refer(address_kwd, pointer);
 						container.insert(container.end(), pointer);
 					end_object_as_reference();
 				}
@@ -629,7 +693,7 @@ namespace Pakal
 				{
 					begin_object(childName);
 						T* ptr = const_cast<T*>(e);
-						refer("address", ptr);
+						refer(address_kwd, ptr);
 					end_object_as_reference();
 
 				}
@@ -656,7 +720,7 @@ namespace Pakal
 		{
 			case ArchiveType::Resolver: 
 			{
-				size_t count = children_name_count(childName);
+				size_t count = get_children_name_count(childName);
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
@@ -705,7 +769,7 @@ namespace Pakal
 			begin_object(name,true);
 
 		size_t count = m_type == ArchiveType::Resolver 
-			? (children_name_count(childName) > Length ? Length : children_name_count(childName)) 
+			? (get_children_name_count(childName) > Length ? Length : get_children_name_count(childName)) 
 			: Length;
 
 		switch (m_type)
@@ -716,7 +780,7 @@ namespace Pakal
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
-						refer("address", container[i]);
+						refer(address_kwd, container[i]);
 					end_object_as_reference();
 				}
 			}
@@ -729,14 +793,14 @@ namespace Pakal
 			end_object_as_value(&container);
 	}
 
-	template<class T, std::enable_if_t<Archive::has_persist<T>::value>*>
+	template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>*>
 	void Archive::container_value(const T& obj)
 	{
 		T& object = const_cast<T&>(obj);
 		object.persist(this);
 	}
 
-	template<class T, std::enable_if_t<!Archive::has_persist<T>::value>*>
+	template<class T, std::enable_if_t<!trait_utils::has_persist<T>::value>*>
 	void Archive::container_value(const T& obj)
 	{
 		T& object = const_cast<T&>(obj);

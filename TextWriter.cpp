@@ -39,7 +39,6 @@
 
 using namespace Pakal;
 
-
 TextWriter::~TextWriter() {}
 
 void TextWriter::push_root(Element* root)
@@ -72,9 +71,29 @@ void TextWriter::end_object_as_value(const void* address)
 	m_context.pop();
 }
 
-size_t TextWriter::children_name_count(const char* name)
+size_t TextWriter::get_children_name_count(const char* name)
 {
 	return get_current_element() ? get_current_element()->elements_with_name(name) : 0;
+}
+
+const char* TextWriter::get_object_class_name()
+{
+	return "";
+}
+void TextWriter::set_object_class_name(const char* className)
+{
+	if (*className)
+	{
+		Attribute* attr = get_current_element()->find_attribute(class_kwd);
+		if (attr == nullptr)
+		{
+			get_current_element()->add_attribute(Attribute(class_kwd, className));
+		}
+		else
+		{
+			attr->string(className);
+		}
+	}
 }
 
 void TextWriter::solve_references()
@@ -94,7 +113,7 @@ void TextWriter::solve_references()
 
 		if (e->address() && m_references.find(e->address()) != m_references.end())
 		{
-			e->add_attribute(Attribute("address", e->address()));
+			e->add_attribute(Attribute(address_kwd, e->address()));
 		}
 
 		for(Element& child : e->elements())
@@ -111,73 +130,86 @@ void TextWriter::refer_object(const char* name, void*& value)
 	m_references.insert(value);
 }
 
-
 void TextWriter::value(const char* name, bool& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, value));
 }
 
 void TextWriter::value(const char* name, char& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<int>(value)));
 }
 
 void TextWriter::value(const char* name, signed char& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<int>(value)));
 }
 
 void TextWriter::value(const char* name, unsigned char& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<unsigned>(value)));
 }
 
 void TextWriter::value(const char* name, short& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<int>(value)));
 }
 
 void TextWriter::value(const char* name, unsigned short& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<unsigned>(value)));
 }
 
 void TextWriter::value(const char* name, int& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, value));
 }
 
 void TextWriter::value(const char* name, unsigned& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, value));
 }
 
 void TextWriter::value(const char* name, long& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<int>(value)));
 }
 
 void TextWriter::value(const char* name, unsigned long& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<unsigned>(value)));
 }
 
 void TextWriter::value(const char* name, float& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, static_cast<double>(value)));
 }
 
 void TextWriter::value(const char* name, double& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, value));
 }
 
 void TextWriter::value(const char* name, char* value, size_t max)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, std::string(value, strnlen(value, max))));
 }
 
 void TextWriter::value(const char* name, std::string& value)
 {
+	assert_if_reserved(name);
 	get_current_element()->add_attribute(Attribute(name, value));
 }

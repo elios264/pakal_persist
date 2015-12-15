@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<SpriteSheetAnimation height="1024" width="2048" size_factor="5" texture="fulgore.png" default="standing">
+	<Animations>
+		<animation name="standing" looped="1" duration="100">
+			<Frames>
+				<frame x="489" y="484" w="98" h="83" oX="0" oY="71" pX="0" pY="0" />
+				<frame x="23" y="23" w="47" h="24" oX="14" oY="71" pX="0" pY="0" />
+			</Frames>
+		</animation>
+		<animation name="block1" looped="0" duration="50">
+			<Frames>
+				<frame x="341" y="681" w="47" h="104" oX="0" oY="0" pX="0" pY="0" />
+			</Frames>
+		</animation>
+	</Animations>
+</SpriteSheetAnimation>

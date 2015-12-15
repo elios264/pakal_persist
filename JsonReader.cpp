@@ -36,20 +36,22 @@
 #include "JsonReader.h"
 #include "picojson/picojson.h"
 
-#include <cassert>
-
 using namespace Pakal;
 using namespace picojson;
 
 
-void JsonReader::parse_element(std::istream& stream, Element* element)
+bool JsonReader::parse_element(std::istream& stream, Element* element)
 {
 	picojson::value rootValue;
-	std::string&& error = picojson::parse(rootValue, stream);
+	std::string&& error = parse(rootValue, stream);
 
-	assert(("error reading the json",error.empty()));
+
+	if (!error.empty())
+		return false;
 	
 	parse_element(rootValue.get<object>(), element);
+
+	return true;
 }
 
 void JsonReader::parse_element(object& object, Element* element)

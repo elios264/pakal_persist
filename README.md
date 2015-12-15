@@ -16,6 +16,8 @@ Serialization of arbitrary objects
 
 serialization of arrays
 
+Polymorphism 
+
 Multiple and possibly cyclical references to objects.
 
 Serialization of the STL containers including maps
@@ -24,9 +26,7 @@ Backwards compatibility ( you can reorder the elements add & remove with no prob
 
 Binary Archives ( coming soon)
 
-Polymorphism ( coming soon )
-
-Extensibility ( you can easy create your own text based serializer
+Extensibility ( you can easy create your own text based serializer )
 
 
 #Usage:
@@ -163,3 +163,147 @@ The example program produces the following output:
 			</friends>
 		</item>
 	</people>
+	
+#Polymorphism
+
+Pakal Persist supports serializing polymorphic objects. To do so polymorphic types need to call  set_type_name inside the persist method:
+
+	struct Object
+	{
+		virtual void persist(Archive* archive)
+		{
+			archive->set_type_name("Object");
+			archive->value("name", m_name);
+		}
+	}
+	
+In order for Pakal Persist to support deserializing polymorphic objects you must  use the built in SimpleFactoryManager or  inherit from 
+
+	class IFactoryManager
+	{
+	public:
+		virtual ~IFactoryManager() {}
+		virtual void* create_object(const std::string& className) = 0;
+	};
+	
+and assign an instance  to the static field
+
+	Archive::ObjectFactory
+
+For example a contrived example with left and right object inheriting from a base object. It's no worse than using animals in an example.
+
+	struct Object
+	{
+
+		std::string m_name;
+
+		Object()
+			: m_name()
+		{
+		}
+
+		Object(const std::string& name)
+			: m_name(name)
+		{
+		}
+
+		virtual ~Object()
+		{
+		}
+
+		virtual void persist(Archive* archive)
+		{
+			archive->set_type_name("Object");
+			archive->value("name", m_name);
+		}
+	};
+
+	struct LeftObject : Object
+	{
+		int m_left_value;
+
+		LeftObject()
+			: Object(""),
+			m_left_value(0)
+		{
+		}
+
+		LeftObject(const std::string& name, int left_value)
+			: Object(name),
+			m_left_value(left_value)
+		{
+		}
+
+		virtual void persist(Archive* archive) override
+		{
+			Object::persist(archive);
+
+			archive->set_type_name("LeftObject");
+			archive->value("left_value", m_left_value);
+		}
+	};
+
+	struct RightObject : Object
+	{
+		float m_right_value;
+
+		RightObject()
+			: Object(""),
+			m_right_value(0.0f)
+		{
+		}
+
+		RightObject(const std::string& name, float right_value)
+			: Object(name),
+			m_right_value(right_value)
+		{
+		}
+
+		virtual void persist(Archive* archive) override
+		{
+			Object::persist(archive);
+
+			archive->set_type_name("RightObject");
+			archive->value("right_value", m_right_value);
+		}
+	};
+	
+	void persist_polymorphism_example()
+	{
+		SimpleFactoyManager manager;
+
+		manager.declare_object<Object>("Object", []() { return new Object(); });
+		manager.declare_object<LeftObject>("LeftObject", []() { return new LeftObject(); });
+		manager.declare_object<RightObject>("RightObject", []() { return new RightObject(); });
+
+		Archive::ObjectFactory = &manager;
+
+		Polymorphism polymorphism;
+		polymorphism.create();
+
+		XmlWriter xml_writer;
+		
+		xml_writer.write("files/persist_polymorphism_example.xml", "polymorphism", polymorphism);
+
+		Polymorphism other_polymorphism;
+		XmlReader xml_reader;
+		
+		xml_reader.read("files/persist_polymorphism_example.xml", "polymorphism", other_polymorphism);
+	}	
+
+The example program produces the following output:
+
+	<?xml version="1.0"?>
+	<polymorphism>
+		<objects>
+			<object class="Object" name="object_0" />
+			<object class="LeftObject" name="left_0" left_value="0" />
+			<object class="RightObject" name="right_0" right_value="0" />
+			<object class="LeftObject" name="left_1" left_value="1" />
+			<object class="LeftObject" name="left_2" left_value="2" />
+			<object class="RightObject" name="right_1" right_value="1" />
+			<object class="RightObject" name="right_2" right_value="2" />
+			<object class="LeftObject" name="left_3" left_value="3" />
+		</objects>
+	</polymorphism>
+		

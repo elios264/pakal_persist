@@ -67,8 +67,10 @@ namespace Pakal
 		void end_object_as_value(const void* address) override;
 		void end_object_as_reference() override;
 		void refer_object(const char* name, void*& value) override;
+		const char* get_object_class_name() override;
+		void set_object_class_name(const char* className) override;
 
-		size_t children_name_count(const char* name) override;
+		size_t get_children_name_count(const char* name) override;
 
 		void value(const char* name, bool& value) override;
 		void value(const char* name, char& value) override;
@@ -90,25 +92,33 @@ namespace Pakal
 		explicit TextReader();
 		virtual ~TextReader();
 
-		virtual void parse_element(std::istream& stream, Element* root) = 0;
+		virtual bool parse_element(std::istream& stream, Element* root) = 0;
 
 	public:
 
-		template <class Type> void read(const char* fileName, const char* name, Type& object)
+		template <class Type> bool read(const char* fileName, const char* name, Type& object)
 		{
 			std::ifstream stream(fileName);
 
-			read(stream, name, object);
+			return read(stream, name, object);
 		}
 
-		template <class Type> void read(std::istream& stream, const char* name, Type& object)
+		template <class Type> bool read(std::istream& stream, const char* name, Type& object)
 		{
 			assert(*name);
 
 			//read the tree
-			Element firstPass, secondPass;
-			parse_element(stream, &firstPass);
-			secondPass = firstPass;
+			Element firstPass;
+			Element secondPass;
+
+			if (parse_element(stream, &firstPass))
+			{
+				secondPass = firstPass;
+			}
+			else
+			{
+				return false;
+			}
 
 			//resolve the value objects
 			push_root(&firstPass);
@@ -128,6 +138,8 @@ namespace Pakal
 			}
 
 			clear_read_cache();
+
+			return true;
 		}
 
 	};

@@ -45,7 +45,7 @@ namespace Pakal
 {
 	class  XmlReader : public TextReader
 	{
-		void parse_element(std::istream& stream, Element* root) override;
+		bool parse_element(std::istream& stream, Element* root) override;
 		void parse_element(pugi::xml_node* node, Element* element);
 	};
 }

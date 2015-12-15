@@ -86,3 +86,8 @@ const std::string& Attribute::string() const
 {
 	return m_value;
 }
+
+void Attribute::string(const std::string& str) const
+{
+	m_value = str;
+}

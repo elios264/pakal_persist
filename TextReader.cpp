@@ -58,7 +58,7 @@ void TextReader::pop_root()
 }
 
 
-void TextReader::begin_object(const char* name,bool)
+void TextReader::begin_object(const char* name,bool /*isContainer*/)
 {
 	if (get_current_element()->is_container())
 	{
@@ -80,7 +80,7 @@ void TextReader::end_object_as_value(const void* address)
 		return;
 	}
 
-	if (Attribute* attr = get_current_element()->find_attribute("address"))
+	if (Attribute* attr = get_current_element()->find_attribute(address_kwd))
 	{
 		void* oldAddress = attr->address();
 
@@ -111,7 +111,18 @@ void TextReader::refer_object(const char* name, void*& value)
 	value = m_solved[oldAddress];
 }
 
-size_t TextReader::children_name_count(const char* name)
+const char* TextReader::get_object_class_name()
+{
+	Attribute* attr = get_current_element()->find_attribute(class_kwd);
+
+	return attr ? attr->string().c_str() : "";
+}
+
+void TextReader::set_object_class_name(const char* className)
+{
+}
+
+size_t TextReader::get_children_name_count(const char* name)
 {
 	return get_current_element()->is_container() ? get_current_element()->elements().size() : get_current_element()->elements_with_name(name) ;
 }

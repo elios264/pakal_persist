@@ -1,0 +1,55 @@
+{
+  "SpriteSheetAnimation": {
+    "Animations": [
+      {
+        "name": "standing",
+        "looped": "1",
+        "duration": "100",
+        "Frames": [
+          {
+            "h": "83",
+            "x": "489",
+            "y": "484",
+            "w": "98",
+            "pY": "0",
+            "oX": "0",
+            "pX": "0",
+            "oY": "71"
+          },
+          {
+            "h": "24",
+            "x": "23",
+            "y": "23",
+            "w": "47",
+            "pY": "0",
+            "oX": "14",
+            "pX": "0",
+            "oY": "71"
+          }
+        ]
+      },
+      {
+        "name": "block1",
+        "looped": "0",
+        "duration": "50",
+        "Frames": [
+          {
+            "h": "104",
+            "x": "341",
+            "y": "681",
+            "w": "47",
+            "pY": "0",
+            "oX": "0",
+            "pX": "0",
+            "oY": "0"
+          }
+        ]
+      }
+    ],
+    "size_factor": "5",
+    "height": "1024",
+    "width": "2048",
+    "texture": "fulgore.png",
+    "default": "standing"
+  }
+}
