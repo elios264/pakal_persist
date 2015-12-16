@@ -55,7 +55,7 @@ void* Attribute::address() const
 
 bool Attribute::boolean() const
 {
-	return m_value == "1" || m_value == "true";
+	return !(m_value == "0" || m_value == "false");
 }
 
 int Attribute::integer() const

@@ -237,8 +237,8 @@ namespace Pakal
 	void Archive::value(const char* name, T& object)
 	{
 		typename std::remove_pointer<T>::type* pointerObject = object;
-
 		value(name, pointerObject);
+		object = pointerObject;
 	}
 
 	template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>*>
