@@ -17,6 +17,7 @@ Features:
 * Serialization of the STL containers including maps
 * Backwards compatibility ( you can reorder the elements add & remove with no problem)
 * Extensibility ( you can easy create your own text based serializer )
+* Non intrusive serialization ( not compatible with polymorphic objects)
 * Binary Archives ( coming soon)
 
 
@@ -54,6 +55,45 @@ For example the classic "Hello World!" using Pakal Persist:
 	XmlWriter writer;
 	writer.write( "persist_hello_world_example.xml", "hello_world", hello_world );
 	
+	
+# Non intrusive serialization
+
+when you have a struct/class that you cant or dont want to modify you can create an external function containing the serialization code.
+#### Note: this is not compatible with polymorphic objects
+
+	struct PropertaryStruct
+	{
+		int x, y;
+	};
+
+	template<>
+	struct Persist<PropertaryStruct>
+	{
+		static void persist(Archive* archive, PropertaryStruct& str)
+		{
+			archive->value("x", str.x);
+			archive->value("y", str.y);
+		}
+	};
+
+	void non_intrusive_persist()
+	{
+		std::vector<PropertaryStruct> str;
+
+		str.push_back({ 1,8 });
+		str.push_back({ 2,7 });
+		str.push_back({ 3,6 });
+		str.push_back({ 4,5 });
+
+		XmlWriter w;
+		w.write("files/non_intrusive_serialization.xml", "PropertaryObjects", str);
+
+		str.clear();
+		XmlReader r;
+
+		r.read("files/non_intrusive_serialization.xml", "PropertaryObjects", str);
+
+	}
 	
 	
 #Cyclic References

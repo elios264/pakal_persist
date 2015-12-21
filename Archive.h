@@ -92,6 +92,18 @@ namespace Pakal
 			c.reserve(c.size() + n);
 		}
 
+		template<class T, std::enable_if_t<trait_utils::has_member_persist<T>::value>* = nullptr>
+		void call_persist(T& object)
+		{
+			object.persist(this);
+		}
+
+		template<class T, std::enable_if_t<trait_utils::has_static_persist<T>::value>* = nullptr>
+		void call_persist(T& object)
+		{
+			Persist<T>::persist(this, object);
+		}
+
 		template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>* = nullptr>
 		void container_value(const T& object);
 
@@ -245,7 +257,7 @@ namespace Pakal
 	void Archive::value(const char* name, T& object)
 	{
 		begin_object(name);
-			object.persist(this);
+		call_persist(object);
 		end_object_as_value(&object);
 	}
 
@@ -456,7 +468,7 @@ namespace Pakal
 			object = create_polymorphic_object<T>();
 		}
 		m_is_pointer = true;
-		object->persist(this);
+		call_persist(*object);
 		m_is_pointer = false;
 		end_object_as_value(object);
 	}
@@ -797,7 +809,7 @@ namespace Pakal
 	void Archive::container_value(const T& obj)
 	{
 		T& object = const_cast<T&>(obj);
-		object.persist(this);
+		call_persist(object);
 	}
 
 	template<class T, std::enable_if_t<!trait_utils::has_persist<T>::value>*>

@@ -2,12 +2,29 @@
 //
 
 #include <vector>
+
 #include "../XmlReader.h"
 #include "../XmlWriter.h"
 #include "../JsonWriter.h"
 #include "../JsonReader.h"
 
 using namespace Pakal;
+
+struct PropertaryStruct
+{
+	int x, y;
+};
+
+template<>
+struct Persist<PropertaryStruct>
+{
+	static void persist(Archive* archive, PropertaryStruct& str)
+	{
+		archive->value("x", str.x);
+		archive->value("y", str.y);
+	}
+};
+
 
 struct Object
 {
@@ -84,7 +101,6 @@ struct RightObject : Object
 		archive->value("right_value", m_right_value);
 	}
 };
-
 
 struct Polymorphism
 {
@@ -477,10 +493,29 @@ void persist_polymorphism_example()
 	json_reader.read("files/persist_polymorphism_example.json", "polymorphism", other_polymorphism2);
 }
 
+void non_intrusive_persist()
+{
+	std::vector<PropertaryStruct> str;
+
+	str.push_back({ 1,8 });
+	str.push_back({ 2,7 });
+	str.push_back({ 3,6 });
+	str.push_back({ 4,5 });
+
+	XmlWriter w;
+	w.write("files/non_intrusive_serialization.xml", "PropertaryObjects", str);
+
+	str.clear();
+	XmlReader r;
+
+	r.read("files/non_intrusive_serialization.xml", "PropertaryObjects", str);
+
+}
 
 int main()
 {
 	persist_hello_world_example();
+	non_intrusive_persist();
 	persist_cyclic_references_example();
 	persist_nested_example();
 	persist_map_example();

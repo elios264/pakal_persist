@@ -2,49 +2,49 @@
   "people": [
     {
       "name": "Alfred",
-      "address": "0071A9A8",
+      "address": "0075B6D8",
       "friends": [
         {
-          "address": "0071A9D4"
+          "address": "0075B704"
         },
         {
-          "address": "0071AA00"
+          "address": "0075B730"
         }
       ]
     },
     {
       "name": "Ben",
-      "address": "0071A9D4",
+      "address": "0075B704",
       "friends": [
         {
-          "address": "0071A9A8"
+          "address": "0075B6D8"
         },
         {
-          "address": "0071AA2C"
+          "address": "0075B75C"
         }
       ]
     },
     {
       "name": "Camilla",
-      "address": "0071AA00",
+      "address": "0075B730",
       "friends": [
         {
-          "address": "0071A9A8"
+          "address": "0075B6D8"
         },
         {
-          "address": "0071A9D4"
+          "address": "0075B704"
         },
         {
-          "address": "0071AA2C"
+          "address": "0075B75C"
         }
       ]
     },
     {
       "name": "Denise",
-      "address": "0071AA2C",
+      "address": "0075B75C",
       "friends": [
         {
-          "address": "0071AA00"
+          "address": "0075B730"
         }
       ]
     }

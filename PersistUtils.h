@@ -52,19 +52,43 @@ namespace Pakal
 {
 	class Archive;
 
+	template<class T>
+	struct Persist
+	{
+		inline static void persist(Archive*, T&) {}
+
+		static constexpr bool is_implemented = false;
+	};
+
 	namespace trait_utils
 	{
+		template<typename T>
+		struct has_static_persist
+		{
+			template <class C>
+			static char(&f(typename std::enable_if<Persist<C>::is_implemented == false>::type*))[1];
+
+			template<typename C> static char(&f(...))[2];
+
+			static constexpr bool value = sizeof(f<T>(nullptr)) == 2;
+		};
 
 		template<typename T>
-		struct has_persist
+		struct has_member_persist
 		{
 			template <class C>
 			static char(&f(typename std::enable_if<
-				std::is_same<void, decltype(std::declval<C>().persist(std::declval<Archive*>()))>::value, void>::type*))[1];
+				std::is_same<void, decltype(std::declval<C>().persist(nullptr))>::value, void>::type*))[1];
 
 			template<typename C> static char(&f(...))[2];
 
 			static constexpr bool value = sizeof(f<T>(nullptr)) == 1;
+		};
+
+		template<typename T>
+		struct has_persist
+		{
+			static constexpr bool value = has_member_persist<T>::value == true || has_static_persist<T>::value == true;
 		};
 
 		template<typename T>
