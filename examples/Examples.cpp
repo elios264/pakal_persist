@@ -10,15 +10,15 @@
 
 using namespace Pakal;
 
-struct PropertaryStruct
+struct ProprietaryStruct
 {
 	int x, y;
 };
 
 template<>
-struct Persist<PropertaryStruct>
+struct Persist<ProprietaryStruct>
 {
-	static void persist(Archive* archive, PropertaryStruct& str)
+	static void persist(Archive* archive, ProprietaryStruct& str)
 	{
 		archive->value("x", str.x);
 		archive->value("y", str.y);
@@ -495,7 +495,7 @@ void persist_polymorphism_example()
 
 void non_intrusive_persist()
 {
-	std::vector<PropertaryStruct> str;
+	std::vector<ProprietaryStruct> str;
 
 	str.push_back({ 1,8 });
 	str.push_back({ 2,7 });

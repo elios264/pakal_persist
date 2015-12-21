@@ -58,18 +58,18 @@ For example the classic "Hello World!" using Pakal Persist:
 	
 # Non intrusive serialization
 
-when you have a struct/class that you cant or dont want to modify you can create an external function containing the serialization code.
-#### Note: this is not compatible with polymorphic objects
+When you have a struct/class that you cant or dont want to modify you can create an external function containing the serialization code.
+Note: ##### this is not compatible with polymorphic objects
 
-	struct PropertaryStruct
+	struct ProprietaryStruct
 	{
 		int x, y;
 	};
 
 	template<>
-	struct Persist<PropertaryStruct>
+	struct Persist<ProprietaryStruct>
 	{
-		static void persist(Archive* archive, PropertaryStruct& str)
+		static void persist(Archive* archive, ProprietaryStruct& str)
 		{
 			archive->value("x", str.x);
 			archive->value("y", str.y);
@@ -78,7 +78,7 @@ when you have a struct/class that you cant or dont want to modify you can create
 
 	void non_intrusive_persist()
 	{
-		std::vector<PropertaryStruct> str;
+		std::vector<ProprietaryStruct> str;
 
 		str.push_back({ 1,8 });
 		str.push_back({ 2,7 });
@@ -86,12 +86,12 @@ when you have a struct/class that you cant or dont want to modify you can create
 		str.push_back({ 4,5 });
 
 		XmlWriter w;
-		w.write("files/non_intrusive_serialization.xml", "PropertaryObjects", str);
+		w.write("files/non_intrusive_serialization.xml", "PropietaryObjects", str);
 
 		str.clear();
 		XmlReader r;
 
-		r.read("files/non_intrusive_serialization.xml", "PropertaryObjects", str);
+		r.read("files/non_intrusive_serialization.xml", "PropietaryObjects", str);
 
 	}
 	

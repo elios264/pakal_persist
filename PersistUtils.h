@@ -55,7 +55,10 @@ namespace Pakal
 	template<class T>
 	struct Persist
 	{
-		inline static void persist(Archive*, T&) {}
+		inline static void persist(Archive*, T&)
+		{
+			static_assert(false, "this method should've never been generated");
+		}
 
 		static constexpr bool is_implemented = false;
 	};
@@ -68,7 +71,8 @@ namespace Pakal
 			template <class C>
 			static char(&f(typename std::enable_if<Persist<C>::is_implemented == false>::type*))[1];
 
-			template<typename C> static char(&f(...))[2];
+			template<typename C>
+			static char(&f(...))[2];
 
 			static constexpr bool value = sizeof(f<T>(nullptr)) == 2;
 		};
@@ -80,7 +84,8 @@ namespace Pakal
 			static char(&f(typename std::enable_if<
 				std::is_same<void, decltype(std::declval<C>().persist(nullptr))>::value, void>::type*))[1];
 
-			template<typename C> static char(&f(...))[2];
+			template<typename C> 
+			static char(&f(...))[2];
 
 			static constexpr bool value = sizeof(f<T>(nullptr)) == 1;
 		};
