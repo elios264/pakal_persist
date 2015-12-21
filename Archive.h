@@ -85,30 +85,30 @@ namespace Pakal
 		Archive& operator=(const Archive& other) = delete;
 
 		template< typename C, std::enable_if_t<!trait_utils::has_reserve<C>::value>* = nullptr >
-		void try_reserve(C&, std::size_t) {}
+		inline void try_reserve(C&, std::size_t) {}
 		template< typename C, std::enable_if_t<trait_utils::has_reserve<C>::value>* = nullptr> 
-		void try_reserve(C& c, std::size_t n)
+		inline void try_reserve(C& c, std::size_t n)
 		{
 			c.reserve(c.size() + n);
 		}
 
 		template<class T, std::enable_if_t<trait_utils::has_member_persist<T>::value>* = nullptr>
-		void call_persist(T& object)
+		inline void call_persist(T& object)
 		{
 			object.persist(this);
 		}
 
 		template<class T, std::enable_if_t<trait_utils::has_static_persist<T>::value>* = nullptr>
-		void call_persist(T& object)
+		inline void call_persist(T& object)
 		{
 			Persist<T>::persist(this, object);
 		}
 
 		template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>* = nullptr>
-		void container_value(const T& object);
+		inline void container_value(const T& object);
 
 		template<class T, std::enable_if_t<!trait_utils::has_persist<T>::value>* = nullptr >
-		void container_value(const T& object);
+		inline void container_value(const T& object);
 
 		template<class T>
 		T* create_polymorphic_object()
@@ -120,10 +120,10 @@ namespace Pakal
 		}
 
 		template<class T, std::enable_if_t<std::is_constructible<T>::value>* = nullptr >
-		T* create_non_polymorphic_object() { return new T(); }
+		inline T* create_non_polymorphic_object() { return new T(); }
 
 		template<class T, std::enable_if_t<!std::is_constructible<T>::value>* = nullptr >
-		T* create_non_polymorphic_object()
+		inline T* create_non_polymorphic_object()
 		{
 			assert(("could not instanciate object for deserialization since is not constructible nor in the factory", false));
 			return nullptr;
@@ -158,12 +158,10 @@ namespace Pakal
 
 		static IFactoryManager* ObjectFactory;
 		inline ArchiveType get_type() { return m_type;  }
-		virtual void set_type_name(const std::string& typeName)
+		inline void set_type_name(const std::string& typeName)
 		{
-			if (m_type == ArchiveType::Writer && m_is_pointer)
-			{
+			if (m_is_pointer && m_type == ArchiveType::Writer)
 				set_object_class_name(typeName.c_str());
-			}
 		}
 
 		virtual void value(const char* name, bool& value) = 0;
@@ -463,13 +461,10 @@ namespace Pakal
 	void Archive::value(const char* name, T*& object)
 	{
 		begin_object(name);
-		if (m_type == ArchiveType::Reader)
-		{
-			object = create_polymorphic_object<T>();
-		}
-		m_is_pointer = true;
-		call_persist(*object);
-		m_is_pointer = false;
+			if (m_type == ArchiveType::Reader) object = create_polymorphic_object<T>();
+			m_is_pointer = true;
+			call_persist(*object);
+			m_is_pointer = false;
 		end_object_as_value(object);
 	}
 
@@ -808,15 +803,13 @@ namespace Pakal
 	template<class T, std::enable_if_t<trait_utils::has_persist<T>::value>*>
 	void Archive::container_value(const T& obj)
 	{
-		T& object = const_cast<T&>(obj);
-		call_persist(object);
+		call_persist(const_cast<T&>(obj));
 	}
 
 	template<class T, std::enable_if_t<!trait_utils::has_persist<T>::value>*>
 	void Archive::container_value(const T& obj)
 	{
-		T& object = const_cast<T&>(obj);
-		value("value", object);
+		value("value", const_cast<T&>(obj));
 	}
 
 }
