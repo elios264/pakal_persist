@@ -65,6 +65,11 @@ void TextWriter::end_object_as_reference()
 	m_context.pop();
 }
 
+bool TextWriter::has_object(const char* name)
+{
+	return get_current_element()->find_element(name) != nullptr;
+}
+
 void TextWriter::end_object_as_value(const void* address)
 {
 	get_current_element()->address(const_cast<void*>(address));

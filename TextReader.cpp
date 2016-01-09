@@ -90,6 +90,11 @@ void TextReader::end_object_as_value(const void* address)
 	m_context.pop();
 }
 
+bool TextReader::has_object(const char* name)
+{
+	return get_current_element()->find_element(name) != nullptr;
+}
+
 void TextReader::end_object_as_reference()
 {
 	if (get_current_element() == &m_empty)

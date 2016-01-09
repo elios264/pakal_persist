@@ -74,12 +74,11 @@ namespace Pakal
 		}
 	};
 
-
 	class  Archive
 	{
 		ArchiveType m_type;
 		std::map<void*, std::vector<const void*>> m_insertion_order;
-		bool m_is_pointer;
+		short m_is_pointer;
 
 		Archive(const Archive& other) = delete;
 		Archive& operator=(const Archive& other) = delete;
@@ -133,7 +132,7 @@ namespace Pakal
 		static constexpr const char* address_kwd = "address";
 		static constexpr const char* class_kwd = "class";
 
-
+		virtual bool has_object(const char* name) = 0;
 		virtual void begin_object(const char* name,bool isContainer = false) = 0;
 		virtual void end_object_as_reference() = 0;
 		virtual void end_object_as_value(const void* address) = 0;
@@ -151,7 +150,7 @@ namespace Pakal
 			assert(("sorry keywords address and class are reserved for internal use", strcmp(address_kwd, name) != 0 && strcmp(class_kwd, name) != 0));
 		};
 
-		explicit Archive(ArchiveType type) : m_type(type), m_is_pointer(false) {}
+		explicit Archive(ArchiveType type) : m_type(type), m_is_pointer(0) {}
 		virtual ~Archive() {}
 
 	public:	
@@ -160,7 +159,7 @@ namespace Pakal
 		inline ArchiveType get_type() { return m_type;  }
 		inline void set_type_name(const std::string& typeName)
 		{
-			if (m_is_pointer && m_type == ArchiveType::Writer)
+			if (m_is_pointer > 0 && m_type == ArchiveType::Writer)
 				set_object_class_name(typeName.c_str());
 		}
 
@@ -200,7 +199,7 @@ namespace Pakal
 		
 		//for an associative stl container like a map
 		template <template<typename ...> class stl_container, typename Key,typename Value,typename...etc, std::enable_if_t<trait_utils::iterates_with_pair<stl_container<Key,Value,etc...>>::value>* = nullptr>
-		void value(const char* name, const char* childName, stl_container<Key,Value,etc...>& container);
+		void value(const char* name, const char* childName, stl_container<Key,Value,etc...>& container, const char* keyName = "key", const char* valueName = "value");
 
 		////for an array 
 		template <class T, size_t Length>
@@ -218,7 +217,7 @@ namespace Pakal
 		void value(const char* name, const char* childName, stl_container<T*, etc...>& container);
 
 		template <template<typename ...> class stl_container, typename Key, typename Value, typename...etc, std::enable_if_t<trait_utils::iterates_with_pair<stl_container<Key, Value*, etc...>>::value>* = nullptr>
-		void value(const char* name, const char* childName, stl_container<Key, Value*, etc...>& container);
+		void value(const char* name, const char* childName, stl_container<Key, Value*, etc...>& container, const char* keyName = "key", const char* valueName = "value");
 
 		template <class T, size_t Length>
 		void value(const char* name, const char* childName, T*(&container)[Length]);
@@ -235,7 +234,7 @@ namespace Pakal
 
 		//for associative stl container just store the addresses of the value field, 
 		template <template<typename ...> class stl_container,typename Key,typename Value,typename...etc, std::enable_if_t<trait_utils::iterates_with_pair<stl_container<Key,Value*,etc...>>::value>* = nullptr>
-		void refer(const char* name, const char* childName, stl_container<Key,Value*,etc...>& container);
+		void refer(const char* name, const char* childName, stl_container<Key,Value*,etc...>& container,const char* keyName = "key", const char* valueName = "value");
 
 		//for an array of pointers, just store the adresses
 		template <class T, size_t Length> 
@@ -337,7 +336,7 @@ namespace Pakal
 	}
 
 	template<template <typename ...> class stl_container, typename Key, typename Value, typename ... etc, std::enable_if_t<trait_utils::iterates_with_pair<stl_container<Key, Value, etc...>>::value>*>
-	void Archive::value(const char* name, const char* childName, stl_container<Key, Value, etc...>& container)	
+	void Archive::value(const char* name, const char* childName, stl_container<Key, Value, etc...>& container, const char* keyName, const char* valueName)
 	{
 		static_assert(!std::is_pointer<Key>::value, "pointers are not currently supported as key on a map");
 
@@ -357,17 +356,27 @@ namespace Pakal
 				{
 					begin_object(childName);
 					{
-						begin_object("key");
-							Key&& key = Key();
-							container_value(key);
+						Key&& key = Key();
+						Value* valueAddress = nullptr;
 
+						if (has_object(keyName))
+						{
+							begin_object(keyName);
+								container_value(key);
+								auto& addresses = *container.insert(std::make_pair(key, Value())).first;
+								valueAddress = &addresses.second;
+								orderList.push_back(&addresses);
+							end_object_as_value(&addresses.first);
+						}
+						else
+						{
+							value(keyName, key);
 							auto& addresses = *container.insert(std::make_pair(key, Value())).first;
+							valueAddress = &addresses.second;
 							orderList.push_back(&addresses);
-						end_object_as_value(&addresses.first);
+						}
 
-						begin_object("value");
-							container_value(addresses.second);
-						end_object_as_value(&addresses.second);
+						value(valueName, *valueAddress);
 					}
 					end_object_as_value(nullptr);
 				}
@@ -383,13 +392,8 @@ namespace Pakal
 
 					begin_object(childName);
 					{
-						begin_object("key");
-							container_value(element->first);
-						end_object_as_value(&element->first);
-
-						begin_object("value");
-							container_value(element->second);
-						end_object_as_value(&element->second);
+						value(keyName, const_cast<Key&>(element->first));
+						value(valueName, const_cast<Value&>(element->second));
 					}
 					end_object_as_value(&element);
 
@@ -404,13 +408,8 @@ namespace Pakal
 				{
 					begin_object(childName);
 					{
-						begin_object("key");
-							container_value(element.first);
-						end_object_as_value(&element.first);
-
-						begin_object("value");
-							container_value(element.second);
-						end_object_as_value(&element.second);
+						value(keyName, const_cast<Key&>(element.first));
+						value(valueName, element.second);
 					}
 					end_object_as_value(&element);
 				}
@@ -462,9 +461,9 @@ namespace Pakal
 	{
 		begin_object(name);
 			if (m_type == ArchiveType::Reader) object = create_polymorphic_object<T>();
-			m_is_pointer = true;
+			m_is_pointer++;
 			call_persist(*object);
-			m_is_pointer = false;
+			m_is_pointer--;
 		end_object_as_value(object);
 	}
 
@@ -516,9 +515,9 @@ namespace Pakal
 				for (const T* element : container)
 				{
 					begin_object(childName);
-						m_is_pointer = true;
+						m_is_pointer++;
 						container_value(*element);
-						m_is_pointer = false;
+						m_is_pointer--;
 					end_object_as_value(element);
 				}
 			}
@@ -530,7 +529,7 @@ namespace Pakal
 	}
 
 	template<template <typename ...> class stl_container, typename Key, typename Value, typename ... etc, std::enable_if_t<trait_utils::iterates_with_pair<stl_container<Key, Value*, etc...>>::value>*>
-	void Archive::value(const char* name, const char* childName, stl_container<Key, Value*, etc...>& container)
+	void Archive::value(const char* name, const char* childName, stl_container<Key, Value*, etc...>& container, const char* keyName , const char* valueName )
 	{
 		static_assert(!std::is_pointer<Key>::value, "pointers are not currently supported as key on a map");
 
@@ -550,17 +549,27 @@ namespace Pakal
 				{
 					begin_object(childName);
 					{
-						begin_object("key");
-							Key&& key = Key();
-							container_value(key);
-							auto& addresses = *container.insert(std::make_pair(key,nullptr)).first;
-							orderList.push_back(&addresses);
-						end_object_as_value(&addresses.first);
+						Key&& key = Key();
+						Value** valueAddress = nullptr;
 
-						begin_object("value");
-							addresses.second = create_polymorphic_object<Value>();
-							container_value(*addresses.second);
-						end_object_as_value(addresses.second);
+						if (has_object(keyName))
+						{
+							begin_object(keyName);
+								container_value(key);
+								auto& addresses = *container.insert(std::make_pair(key, nullptr)).first;
+								orderList.push_back(&addresses);
+								valueAddress = &addresses.second;
+							end_object_as_value(&addresses.first);
+						}
+						else
+						{
+							value(keyName, key);
+							auto& addresses = *container.insert(std::make_pair(key, nullptr)).first;
+							valueAddress = &addresses.second;
+							orderList.push_back(&addresses);
+						}
+
+						value(valueName, *valueAddress);
 					}
 					end_object_as_value(nullptr);
 				}
@@ -576,13 +585,8 @@ namespace Pakal
 
 					begin_object(childName);
 					{
-						begin_object("key");
-							container_value(element->first);
-						end_object_as_value(&element->first);
-
-						begin_object("value");
-							container_value(element->second);
-						end_object_as_value(element->second);
+						value(keyName, const_cast<Key&>(element->first));
+						value(valueName, *element->second);
 					}
 					end_object_as_value(&element);
 
@@ -596,15 +600,11 @@ namespace Pakal
 				{
 					begin_object(childName);
 					{
-						begin_object("key");
-							container_value(element.first);
-						end_object_as_value(&element.first);
+						value(keyName, const_cast<Key&>(element.first));
 
-						begin_object("value");
-							m_is_pointer = true;
-							container_value(*element.second);
-							m_is_pointer = false;
-						end_object_as_value(element.second);
+						m_is_pointer++;
+						value(valueName, *element.second);
+						m_is_pointer--;
 					}
 					end_object_as_value(&element);
 				}
@@ -649,9 +649,9 @@ namespace Pakal
 				for (size_t i = 0; i < count; i++)
 				{
 					begin_object(childName);
-						m_is_pointer = true;
+						m_is_pointer++;
 						container_value(*container[i]);
-						m_is_pointer = false;
+						m_is_pointer--;
 					end_object_as_value(container[i]);
 				}
 			}
@@ -716,7 +716,7 @@ namespace Pakal
 	}
 
 	template<template <typename ...> class stl_container, typename Key, typename Value, typename ... etc, std::enable_if_t<trait_utils::iterates_with_pair<stl_container<Key, Value*, etc...>>::value>*>
-	void Archive::refer(const char* name, const char* childName, stl_container<Key, Value*, etc...>& container)
+	void Archive::refer(const char* name, const char* childName, stl_container<Key, Value*, etc...>& container, const char* keyName, const char* valueName )
 	{
 		static_assert(!std::is_pointer<Key>::value, "pointers are not currently supported as key on a map");
 
@@ -732,14 +732,25 @@ namespace Pakal
 				{
 					begin_object(childName);
 					{
-						begin_object("key");
-							Key&& key = Key();
-							container_value(key);
+						Key&& key = Key();
+						Value** valueAddress = nullptr;
 
+						if (has_object(keyName))
+						{
+							begin_object(keyName);
+								container_value(key);
+								auto& addresses = *container.insert(std::make_pair(key, nullptr)).first;
+								valueAddress = &addresses.second;
+							end_object_as_value(&addresses.first);
+						}
+						else
+						{
+							value(keyName, key);
 							auto& addresses = *container.insert(std::make_pair(key, nullptr)).first;
-						end_object_as_value(&addresses.first);
+							valueAddress = &addresses.second;
+						}
 
-						refer("value", addresses.second);
+						refer(valueName, *valueAddress);
 					}
 					end_object_as_value(nullptr);
 				}
@@ -751,11 +762,8 @@ namespace Pakal
 				{
 					begin_object(childName);
 					{
-						begin_object("key");
-							container_value(e.first);
-						end_object_as_value(&e.first);
-
-						refer("value", e.second);
+						value(keyName, const_cast<Key&>(e.first));
+						refer(valueName, e.second);
 					}
 					end_object_as_value(&e);
 				}

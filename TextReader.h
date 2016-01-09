@@ -65,6 +65,7 @@ namespace Pakal
 
 		void begin_object(const char* name, bool isContainer = false) override;
 		void end_object_as_value(const void* address) override;
+		bool has_object(const char* name) override;
 		void end_object_as_reference() override;
 		void refer_object(const char* name, void*& value) override;
 		const char* get_object_class_name() override;

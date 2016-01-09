@@ -63,6 +63,7 @@ namespace Pakal
 		void begin_object(const char* name, bool isContainer = false) override;
 		void end_object_as_value(const void* address) override;
 		void end_object_as_reference() override;
+		bool has_object(const char* name) override;
 		void refer_object(const char* name, void*& value) override;
 		size_t get_children_name_count(const char* name) override;
 
