@@ -1,5 +1,7 @@
-# pakal persist
+# Pakal persist
 C++ serialization library
+
+Coming soon: Persist C# serialization library (same features as this library)
 
 #Overview
 
