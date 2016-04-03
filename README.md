@@ -1,7 +1,7 @@
 # Pakal persist
 C++ serialization library
 
-Coming soon: Persist C# serialization library (same features as this library)
+Persist C# serialization library is now available  here (https://github.com/elios264/Pakal_PersistDotNet )
 
 #Overview
 
