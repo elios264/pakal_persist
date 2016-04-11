@@ -2,8 +2,6 @@
 
 using namespace Pakal;
 
-IFactoryManager* Archive::ObjectFactory = nullptr;
-
 
 void* SimpleFactoyManager::create_object(const std::string& className)
 {

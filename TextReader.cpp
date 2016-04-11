@@ -39,7 +39,7 @@
 using namespace Pakal;
 
 
-TextReader::TextReader(): Archive(ArchiveType::Reader) , m_root(nullptr) {}
+TextReader::TextReader(IFactoryManager* factory): Archive(ArchiveType::Reader,factory) , m_root(nullptr) {}
 TextReader::~TextReader() {}
 
 

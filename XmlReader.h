@@ -45,6 +45,10 @@ namespace Pakal
 {
 	class  XmlReader : public TextReader
 	{
+	public:
+		explicit XmlReader(IFactoryManager* factory = nullptr) : TextReader(factory) {}
+
+	private:
 		bool parse_element(std::istream& stream, Element* root) override;
 		void parse_element(pugi::xml_node* node, Element* element);
 	};

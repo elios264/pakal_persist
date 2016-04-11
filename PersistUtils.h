@@ -52,6 +52,13 @@ namespace Pakal
 {
 	class Archive;
 
+	class IFactoryManager
+	{
+	public:
+		virtual ~IFactoryManager() {}
+		virtual void* create_object(const std::string& className) = 0;
+	};
+
 	template<class T>
 	struct Persist
 	{

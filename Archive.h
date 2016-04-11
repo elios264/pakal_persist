@@ -53,12 +53,6 @@ namespace Pakal
 		Resolver,
 	};
 
-	class IFactoryManager
-	{
-	public:
-		virtual ~IFactoryManager() {}
-		virtual void* create_object(const std::string& className) = 0;
-	};
 
 	class SimpleFactoyManager : public IFactoryManager
 	{
@@ -78,6 +72,7 @@ namespace Pakal
 	{
 		ArchiveType m_type;
 		std::map<void*, std::vector<const void*>> m_insertion_order;
+		IFactoryManager* m_object_factory;
 		short m_is_pointer;
 
 		Archive(const Archive& other) = delete;
@@ -113,7 +108,7 @@ namespace Pakal
 		T* create_polymorphic_object()
 		{
 			auto className = get_object_class_name();
-			auto newObject = *className && ObjectFactory ? ObjectFactory->create_object(className) : nullptr;
+			auto newObject = *className && m_object_factory ? m_object_factory->create_object(className) : nullptr;
 
 			return newObject ? static_cast<T*>(newObject) : create_non_polymorphic_object<T>();
 		}
@@ -145,17 +140,16 @@ namespace Pakal
 
 		inline void set_type(ArchiveType type) { m_type = type; }
 		inline void clear_read_cache() { m_insertion_order.clear(); }
-		inline void assert_if_reserved(const char* name)
+		static inline void assert_if_reserved(const char* name)
 		{
 			assert(("sorry keywords address and class are reserved for internal use", strcmp(address_kwd, name) != 0 && strcmp(class_kwd, name) != 0));
 		};
 
-		explicit Archive(ArchiveType type) : m_type(type), m_is_pointer(0) {}
+		explicit Archive(ArchiveType type, IFactoryManager* factory = nullptr) : m_type(type), m_object_factory(factory), m_is_pointer(0) {}
 		virtual ~Archive() {}
 
 	public:	
 
-		static IFactoryManager* ObjectFactory;
 		inline ArchiveType get_type() { return m_type;  }
 		inline void set_type_name(const std::string& typeName)
 		{

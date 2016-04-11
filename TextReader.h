@@ -90,7 +90,7 @@ namespace Pakal
 
 	protected:
 
-		explicit TextReader();
+		explicit TextReader(IFactoryManager* factory);
 		virtual ~TextReader();
 
 		virtual bool parse_element(std::istream& stream, Element* root) = 0;
