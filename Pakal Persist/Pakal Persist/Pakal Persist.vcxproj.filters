@@ -42,7 +42,7 @@
     <ClInclude Include="..\..\pugixml\pugixml.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Utils.h">
+    <ClInclude Include="..\..\PersistUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\JsonWriter.h">
@@ -81,6 +81,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\JsonReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Archive.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

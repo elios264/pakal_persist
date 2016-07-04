@@ -65,10 +65,13 @@ namespace Pakal
 
 		void begin_object(const char* name, bool isContainer = false) override;
 		void end_object_as_value(const void* address) override;
+		bool has_object(const char* name) override;
 		void end_object_as_reference() override;
 		void refer_object(const char* name, void*& value) override;
+		const char* get_object_class_name() override;
+		void set_object_class_name(const char* className) override;
 
-		size_t children_name_count(const char* name) override;
+		size_t get_children_name_count(const char* name) override;
 
 		void value(const char* name, bool& value) override;
 		void value(const char* name, char& value) override;
@@ -87,7 +90,7 @@ namespace Pakal
 
 	protected:
 
-		explicit TextReader();
+		explicit TextReader(IFactoryManager* factory);
 		virtual ~TextReader();
 
 		virtual bool parse_element(std::istream& stream, Element* root) = 0;
@@ -104,12 +107,21 @@ namespace Pakal
 		template <class Type> bool read(std::istream& stream, const char* name, Type& object)
 		{
 			assert(*name);
+			if((&stream) == nullptr)
+				return false;
 
 			//read the tree
-			Element firstPass, secondPass;
-			if (parse_element(stream, &firstPass) == false)
+			Element firstPass;
+			Element secondPass;
+
+			if (parse_element(stream, &firstPass))
+			{
+				secondPass = firstPass;
+			}
+			else
+			{
 				return false;
-			secondPass = firstPass;
+			}
 
 			//resolve the value objects
 			push_root(&firstPass);

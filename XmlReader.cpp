@@ -35,7 +35,6 @@
 
 #include "XmlReader.h"
 #include "pugixml/pugixml.hpp"
-#include <cassert>
 
 using namespace Pakal;
 using namespace pugi;
@@ -45,7 +44,6 @@ bool XmlReader::parse_element(std::istream& stream, Element* root)
 	xml_document doc;
 	xml_parse_result result = doc.load(stream);
 
-	//assert(("error reading the xml",result.status == status_ok));
 	if (result.status != status_ok)
 		return false;
 

@@ -56,6 +56,7 @@ namespace Pakal
 		unsigned int unsigned_integer() const;
 		double real() const;
 		const std::string& string() const;
+		void string(const std::string& str) const;
 	};
 
 	template<class T>

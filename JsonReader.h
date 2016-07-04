@@ -48,9 +48,14 @@ namespace picojson
 
 namespace Pakal
 {
+
 	class JsonReader : public TextReader
 	{
-		void parse_element(std::istream& stream, Element* root) override;
+	public:
+		explicit JsonReader(IFactoryManager* factory = nullptr) : TextReader(factory) {}
+
+	private:
+		bool parse_element(std::istream& stream, Element* root) override;
 		void parse_element(picojson::object& object, Element* element);
 		void parse_element(picojson::array& array, Element* element);
 	};

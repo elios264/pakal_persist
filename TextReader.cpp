@@ -39,7 +39,7 @@
 using namespace Pakal;
 
 
-TextReader::TextReader(): Archive(ArchiveType::Reader) , m_root(nullptr) {}
+TextReader::TextReader(IFactoryManager* factory): Archive(ArchiveType::Reader,factory) , m_root(nullptr) {}
 TextReader::~TextReader() {}
 
 
@@ -58,7 +58,7 @@ void TextReader::pop_root()
 }
 
 
-void TextReader::begin_object(const char* name,bool)
+void TextReader::begin_object(const char* name,bool /*isContainer*/)
 {
 	if (get_current_element()->is_container())
 	{
@@ -80,15 +80,19 @@ void TextReader::end_object_as_value(const void* address)
 		return;
 	}
 
-	if (Attribute* attr = get_current_element()->find_attribute("address"))
+	if (Attribute* attr = get_current_element()->find_attribute(address_kwd))
 	{
 		void* oldAddress = attr->address();
-
-		m_solved[oldAddress] = const_cast<void*>(address);
+		m_solved.insert(std::make_pair(oldAddress, const_cast<void*>(address)));
 	}
 
 	get_current_element()->remove_from_parent();
 	m_context.pop();
+}
+
+bool TextReader::has_object(const char* name)
+{
+	return get_current_element()->find_element(name) != nullptr;
 }
 
 void TextReader::end_object_as_reference()
@@ -111,15 +115,24 @@ void TextReader::refer_object(const char* name, void*& value)
 	value = m_solved[oldAddress];
 }
 
-size_t TextReader::children_name_count(const char* name)
+const char* TextReader::get_object_class_name()
+{
+	Attribute* attr = get_current_element()->find_attribute(class_kwd);
+
+	return attr ? attr->string().c_str() : "";
+}
+
+void TextReader::set_object_class_name(const char* className)
+{
+}
+
+size_t TextReader::get_children_name_count(const char* name)
 {
 	return get_current_element()->is_container() ? get_current_element()->elements().size() : get_current_element()->elements_with_name(name) ;
 }
 
 void TextReader::value(const char* name, bool& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -129,8 +142,6 @@ void TextReader::value(const char* name, bool& value)
 
 void TextReader::value(const char* name, char& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -140,8 +151,6 @@ void TextReader::value(const char* name, char& value)
 
 void TextReader::value(const char* name, signed char& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -151,8 +160,6 @@ void TextReader::value(const char* name, signed char& value)
 
 void TextReader::value(const char* name, unsigned char& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -162,8 +169,6 @@ void TextReader::value(const char* name, unsigned char& value)
 
 void TextReader::value(const char* name, short& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -173,8 +178,6 @@ void TextReader::value(const char* name, short& value)
 
 void TextReader::value(const char* name, unsigned short& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -184,8 +187,6 @@ void TextReader::value(const char* name, unsigned short& value)
 
 void TextReader::value(const char* name, int& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -195,8 +196,6 @@ void TextReader::value(const char* name, int& value)
 
 void TextReader::value(const char* name, unsigned& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -206,8 +205,6 @@ void TextReader::value(const char* name, unsigned& value)
 
 void TextReader::value(const char* name, long& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -217,8 +214,6 @@ void TextReader::value(const char* name, long& value)
 
 void TextReader::value(const char* name, unsigned long& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -228,8 +223,6 @@ void TextReader::value(const char* name, unsigned long& value)
 
 void TextReader::value(const char* name, float& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -239,8 +232,6 @@ void TextReader::value(const char* name, float& value)
 
 void TextReader::value(const char* name, double& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
@@ -250,20 +241,16 @@ void TextReader::value(const char* name, double& value)
 
 void TextReader::value(const char* name, char* value, size_t max)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
-		strncpy_s(value, max, attribute->string().c_str(), max);
+		strncpy(value, attribute->string().c_str(), max);
 		value[max - 1] = '\0';
 	}
 }
 
 void TextReader::value(const char* name, std::string& value)
 {
-	if (get_type() == ArchiveType::Resolver) return;
-
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
