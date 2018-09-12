@@ -1,0 +1,45 @@
+{
+  "polymorphism": {
+    "objects": [
+      {
+        "class": "Object",
+        "name": "object_0"
+      },
+      {
+        "class": "LeftObject",
+        "name": "left_0",
+        "left_value": "0"
+      },
+      {
+        "right_value": "0",
+        "class": "RightObject",
+        "name": "right_0"
+      },
+      {
+        "class": "LeftObject",
+        "name": "left_1",
+        "left_value": "1"
+      },
+      {
+        "class": "LeftObject",
+        "name": "left_2",
+        "left_value": "2"
+      },
+      {
+        "right_value": "1",
+        "class": "RightObject",
+        "name": "right_1"
+      },
+      {
+        "right_value": "2",
+        "class": "RightObject",
+        "name": "right_2"
+      },
+      {
+        "class": "LeftObject",
+        "name": "left_3",
+        "left_value": "3"
+      }
+    ]
+  }
+}

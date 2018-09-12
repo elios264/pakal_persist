@@ -64,7 +64,7 @@ namespace Pakal
 	{
 		inline static void persist(Archive*, T&)
 		{
-			//static_assert(false, "this method should've never been generated");
+			static_assert(false, "this method should've never been generated");
 		}
 
 		static constexpr bool is_implemented = false;

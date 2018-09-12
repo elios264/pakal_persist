@@ -119,8 +119,7 @@ namespace Pakal
 		template<class T, std::enable_if_t<!std::is_constructible<T>::value>* = nullptr >
 		inline T* create_non_polymorphic_object()
 		{
-			//("could not instanciate object for deserialization since is not constructible nor in the factory"
-			assert(false);
+			assert(("could not instanciate object for deserialization since is not constructible nor in the factory", false));
 			return nullptr;
 		}
 
@@ -143,8 +142,7 @@ namespace Pakal
 		inline void clear_read_cache() { m_insertion_order.clear(); }
 		static inline void assert_if_reserved(const char* name)
 		{
-			//("sorry keywords address and class are reserved for internal use", 
-			assert(strcmp(address_kwd, name) != 0 && strcmp(class_kwd, name) != 0);
+			assert(("sorry keywords address and class are reserved for internal use", strcmp(address_kwd, name) != 0 && strcmp(class_kwd, name) != 0));
 		};
 
 		explicit Archive(ArchiveType type, IFactoryManager* factory = nullptr) : m_type(type), m_object_factory(factory), m_is_pointer(0) {}
