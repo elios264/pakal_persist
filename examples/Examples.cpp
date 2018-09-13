@@ -473,8 +473,6 @@ void persist_polymorphism_example()
 	manager.declare_object<LeftObject>("LeftObject", []() { return new LeftObject(); });
 	manager.declare_object<RightObject>("RightObject", []() { return new RightObject(); });
 
-	Archive::ObjectFactory = &manager;
-
 	Polymorphism polymorphism;
 	polymorphism.create();
 
@@ -486,8 +484,8 @@ void persist_polymorphism_example()
 
 	Polymorphism other_polymorphism;
 	Polymorphism other_polymorphism2;
-	XmlReader xml_reader;
-	JsonReader json_reader;
+	XmlReader xml_reader(&manager);
+	JsonReader json_reader(&manager);
 	
 	xml_reader.read("files/persist_polymorphism_example.xml", "polymorphism", other_polymorphism);
 	json_reader.read("files/persist_polymorphism_example.json", "polymorphism", other_polymorphism2);

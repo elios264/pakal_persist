@@ -115,6 +115,19 @@ namespace Pakal
 			static constexpr bool value = sizeof(f<T>(nullptr)) == 1;
 		};
 
+		template <typename T, typename... Args>
+		class is_only_constructible
+		{
+			template <typename U, typename = void>
+			struct test : std::false_type {};
+			template <typename U>
+			struct test<U, decltype(void(new U(std::declval<Args>()...)))>
+				: std::true_type {};
+
+		public:
+			static constexpr bool value = test<T>::value;
+		};
+
 		template<typename T>
 		struct iterates_with_pair
 		{
