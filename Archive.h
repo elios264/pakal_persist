@@ -70,6 +70,12 @@ namespace Pakal
 
 	class  Archive
 	{
+	public:
+		static void set_global_factory_manager(IFactoryManager* factory) {
+			m_global_factory_manager = factory;
+		}
+	private:
+		static IFactoryManager* m_global_factory_manager;
 		ArchiveType m_type;
 		std::map<void*, std::vector<const void*>> m_insertion_order;
 		IFactoryManager* m_object_factory;
@@ -113,11 +119,13 @@ namespace Pakal
 			return newObject ? static_cast<T*>(newObject) : create_non_polymorphic_object<T>();
 		}
 
-		template<class T, std::enable_if_t<std::is_constructible<T>::value>* = nullptr >
-		inline T* create_non_polymorphic_object() { return new T(); }
+		template<class T>
+		inline std::enable_if_t<trait_utils::is_only_constructible<T>::value && std::is_abstract<T>::value == false, T>*
+			create_non_polymorphic_object() { return new T(); }
 
-		template<class T, std::enable_if_t<!std::is_constructible<T>::value>* = nullptr >
-		inline T* create_non_polymorphic_object()
+		template<class T>
+		inline std::enable_if_t< std::is_abstract<T>::value || trait_utils::is_only_constructible<T>::value == false, T>*
+			create_non_polymorphic_object()
 		{
 			assert(("could not instanciate object for deserialization since is not constructible nor in the factory", false));
 			return nullptr;
@@ -145,7 +153,7 @@ namespace Pakal
 			assert(("sorry keywords address and class are reserved for internal use", strcmp(address_kwd, name) != 0 && strcmp(class_kwd, name) != 0));
 		};
 
-		explicit Archive(ArchiveType type, IFactoryManager* factory = nullptr) : m_type(type), m_object_factory(factory), m_is_pointer(0) {}
+		explicit Archive(ArchiveType type, IFactoryManager* factory = nullptr) : m_type(type), m_object_factory(factory == nullptr ? m_global_factory_manager : factory), m_is_pointer(0) {}
 		virtual ~Archive() {}
 
 	public:	

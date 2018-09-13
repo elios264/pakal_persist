@@ -244,7 +244,7 @@ void TextReader::value(const char* name, char* value, size_t max)
 	Attribute* attribute = get_current_element()->find_attribute(name);
 	if (attribute)
 	{
-		strncpy_s(value, max, attribute->string().c_str(), max);
+		strncpy(value, attribute->string().c_str(), max);
 		value[max - 1] = '\0';
 	}
 }

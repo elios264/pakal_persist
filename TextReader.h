@@ -107,6 +107,8 @@ namespace Pakal
 		template <class Type> bool read(std::istream& stream, const char* name, Type& object)
 		{
 			assert(*name);
+			if((&stream) == nullptr)
+				return false;
 
 			//read the tree
 			Element firstPass;

@@ -2,6 +2,7 @@
 
 using namespace Pakal;
 
+ IFactoryManager* Archive::m_global_factory_manager = nullptr;
 
 void* SimpleFactoyManager::create_object(const std::string& className)
 {

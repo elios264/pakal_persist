@@ -82,7 +82,8 @@ void JsonWriter::write_element(object& object, Element* element)
 			write_element(childNode, &child);
 
 			auto inserted = object.insert(make_pair(child.name(), picojson::value(childNode))).second;
-			assert(("Anonymus containers (empty string) are not allowed when serializing with json eg. archive->value('', 'animation', animations) ", inserted));
+			//("Anonymus containers (empty string) are not allowed when serializing with json eg. archive->value('', 'animation', animations) "
+			assert( inserted);
 		}
 		else
 		{
@@ -90,7 +91,8 @@ void JsonWriter::write_element(object& object, Element* element)
 			write_element(childNode, &child);
 
 			auto inserted = object.insert(make_pair(child.name(), picojson::value(childNode))).second;
-			assert(("Anonymus containers (empty string) are not allowed when serializing with json eg. archive->value('', 'animation', animations) ", inserted));
+			//"Anonymus containers (empty string) are not allowed when serializing with json eg. archive->value('', 'animation', animations) ",
+			assert( inserted);
 		}
 	}
 }
